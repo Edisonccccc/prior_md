@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PriorMD — documents</title>
+<meta name="description" content="Turning a clinical referral packet into a submission-ready prior authorization.">
+<style>
+  :root{
+    --bg:#f2f4f1; --card:#fff; --ink:#17212b; --muted:#6b7a76; --line:#d2d9d2;
+    --accent:#0f6e5c; --accent-soft:#dceae4; --amber:#a9721a; --amber-soft:#f6e8ce;
+    --mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#131917; --card:#1b2321; --ink:#e6ebe7; --muted:#84968e; --line:#2e3a36;
+    --accent:#5fc0a6; --accent-soft:#1e3630; --amber:#d9a44c; --amber-soft:#382c15;}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;padding:0 20px 80px;
+       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto}
+  header{padding:64px 0 30px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+          color:var(--accent);margin-bottom:14px}
+  h1{font-size:clamp(28px,5vw,40px);line-height:1.12;letter-spacing:-.02em;margin:0 0 12px}
+  .sub{color:var(--muted);font-size:18px;margin:0;max-width:56ch}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .pill{font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:20px;
+        background:var(--card);border:1px solid var(--line);color:var(--muted)}
+  .pill b{color:var(--accent);font-weight:600}
+  .pill.warn b{color:var(--amber)}
+  h2{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+     color:var(--muted);margin:44px 0 14px;font-weight:700}
+  a.doc{display:block;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);
+        border-radius:8px;padding:18px 20px;margin-bottom:11px;text-decoration:none;color:inherit}
+  a.doc:hover{border-left-width:6px;padding-left:17px}
+  a.doc.sme{border-left-color:var(--amber)}
+  a.doc h3{margin:0 0 5px;font-size:17.5px}
+  a.doc p{margin:0;color:var(--muted);font-size:15px}
+  a.doc .meta{font-family:var(--mono);font-size:10.5px;color:var(--accent);
+              letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:7px}
+  a.doc.sme .meta{color:var(--amber)}
+  .note{background:var(--amber-soft);border:1px solid var(--line);border-radius:8px;
+        padding:15px 18px;font-size:14.5px;color:var(--ink);margin-top:14px}
+  footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
+         font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.9}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">PriorMD</div>
+  <h1>Turning a referral packet into a submittable authorization</h1>
+  <p class="sub">Prior authorization for home IV infusion — a pipeline that produces a submission-ready request for a specialist to approve rather than rewrite.</p>
+  <div class="pills">
+    <span class="pill">tests <b>40 / 40</b></span>
+    <span class="pill">evals <b>8 pass · 0 fail · 2 skip</b></span>
+    <span class="pill warn">layer 4 <b>not built</b></span>
+  </div>
+</header>
+
+<h2>Documents</h2>
+
+<a class="doc" href="docs/engine-design.html">
+  <span class="meta">system design · 13 sections · 6 figures</span>
+  <h3>Engine design</h3>
+  <p>The layer contracts, the evidence-carrying data model, the schedule model, the constraints on the judgment layer, the CMM questionnaire gap, and the eval architecture. Starts with a background section for readers new to the domain, and ends with a glossary.</p>
+</a>
+
+<a class="doc" href="docs/overview.html">
+  <span class="meta">orientation · 10 sections</span>
+  <h3>The whole picture</h3>
+  <p>The gentle version, written for an engineer with no medical background. What the business does, what is built, what is missing, and what it costs.</p>
+</a>
+
+<h2>For the specialist</h2>
+
+<a class="doc sme" href="docs/proposal.html">
+  <span class="meta">proposal</span>
+  <h3>Proposal &amp; interview</h3>
+  <p>What the tool would do and what it would need. Degrades to a plain scrolling page where JavaScript is unavailable.</p>
+</a>
+
+<a class="doc sme" href="outbox/followup-questions-2026-08-25.html">
+  <span class="meta">questionnaire · 13 questions</span>
+  <h3>Follow-up questions</h3>
+  <p>Fillable in the browser — type into the boxes and press <em>Copy my answers</em> at the bottom. Also readable as a plain document with scripting off.</p>
+</a>
+
+<div class="note">
+  <strong>Note.</strong> Nothing on these pages is submitted anywhere. The questionnaire keeps everything in the browser until you copy it out yourself.
+</div>
+
+<footer>
+  Source: <a href="https://github.com/Edisonccccc/prior_md">github.com/Edisonccccc/prior_md</a><br>
+  Start with <code>README.md</code> to run it, <code>AGENT.md</code> for the full handoff.<br>
+  The confidential source material and case library are not in this repository.
+</footer>
+
+</div>
+</body>
+</html>
