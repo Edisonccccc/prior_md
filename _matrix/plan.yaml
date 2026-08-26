@@ -1,0 +1,240 @@
+# PriorMD — plan.yaml
+#
+# Bootstrapped 2026-08-25 from the project's own evidence: AGENT.md's decision
+# log, the code that actually runs (20 tests + 8 eval assertions, both verified
+# green on this date), the SME's 12-rule source doc, her Q1-Q8 interview
+# answers, and the 21-case library.
+#
+# THREE columns, not ten. The first draft of this plan gave each phase of work
+# its own stage and the board spent ten columns on a sequence nobody chooses
+# between — while the one question it exists to answer, "what is left before a
+# specialist can use this", was spread across six of them and legible in none.
+# That is matrix's own D-208, applied here. The sequence did not disappear: it
+# lives in `depends_on`, and `matrix brief S1` prints it as dependency waves,
+# which is where a reader actually wants it.
+#
+# There is no git repo, no Jira and no GitHub here yet (discussions Q-04), so
+# every gate is human-asserted. Where an artifact exists the gate cites it;
+# where one does not the gate says what would close it, rather than inventing
+# a `check:` that will never run.
+#
+# LOCATION: Projects/prior_md/_matrix/ since 2026-08-26. The project was
+# reorganised out of its temporary unpack folder that day: code to src/, prompts
+# to prompts/, the design doc to docs/, everything confidential to data/ behind a
+# .gitignore. Tests (20/20) and evals (8/0/2) were re-verified from three
+# different working directories after the move. The old folder is kept as a
+# rollback point only.
+
+project:
+  key: priormd
+  north_star: "Turn a clinical referral packet into a submission-ready prior authorization that a PA specialist approves rather than rewrites."
+  prose: strict
+
+# Rows — six surfaces that can break independently. Five are the pipeline's
+# layers; the sixth is what a human actually operates.
+#
+# Deliberately NOT a row: the SME feedback loop. It is cross-cutting — the
+# 08-03 nursing ruling changed code, a test, two eval files and the decision
+# log at once — so it lives in discussions.md and in blocks on whichever
+# surface a ruling changes, which is also who has to review it.
+workstreams:
+  - {id: EXTRACT, name: Extraction,  owns: "the extraction prompt and the JSON contract every downstream layer reads"}
+  - {id: CALC,    name: Calculation, owns: "pa_calc.py — dates, dosing schedules, vial counts, J-code units, the one-liner string"}
+  - {id: JUDGE,   name: Coding judgment, owns: "which ICD route, organism codes and secondary diagnoses a case gets"}
+  - {id: GATE,    name: Safety gates, owns: "what halts or warns before a PA is submitted"}
+  - {id: EVAL,    name: Evidence,    owns: "the case library, the five-dimension scorer, and what counts as a regression"}
+  - {id: PRODUCT, name: Product,     owns: "what a specialist operates — intake, review surface, the deployed service"}
+
+stages:
+  - id: S0
+    name: Built so far
+    status: done
+    goal: The rules encoded and tested by experiment, the deterministic core with a zero-trust gate in front of it, and the scope the SME set on 08-03. Here because a plan scoped to open work alone would report 0% on a project whose calc layer, pipeline and eval harness all run green today.
+    gates:
+      - {id: S0-G1, text: "experiment #1 established what an LLM can be trusted with, and its failures became architecture rather than prompt patches", met: true,
+         evidence: "experiment_01_results.md — ~85% against the expert. All arithmetic right, hardest judgment call reproduced. The three misses each became a structural fix: math to code, code routes to SME cases, format and no-inference to validators and evals."}
+      - {id: S0-G2, text: "the calc and pipeline suites pass, and the eval harness scores a worked case across all five dimensions", met: true,
+         evidence: "20/20 tests green (test_pa_calc 14 + test_pipeline 6); run_evals.py 8 pass / 0 fail / 2 skip. Both re-verified 2026-08-25. The scorer bug that punished honest warning flags was found and fixed here."}
+      - {id: S0-G3, text: "the 08-03 scope ruling is enforced by a test, and the v1 training approach is decided", met: true,
+         evidence: "SME 2026-08-03 'remove the nursing coding from the ai workflow' — table deleted, 99601/99602 banned in both eval cases, test_nursing_codes_never_auto_added present. No fine-tuning for v1; the calibration ladder is written down in AGENT.md 6."}
+
+  - id: S1
+    name: To a usable copilot
+    status: todo
+    goal: Everything between the 08-25 delivery and a specialist running a real referral through the tool. One column because it is one sequence, not a set of alternatives — the order is in depends_on, and `matrix brief S1` reads it out as waves.
+    gates:
+      - {id: S1-G1, text: "each of the SME's eight answers is encoded somewhere a test or an eval assertion can fail on, and sme_answers.md carries its date and verbatim quote", met: false}
+      - {id: S1-G2, text: "a re-scan of all 42 case PDFs finds no surviving identifier", met: false}
+      - {id: S1-G3, text: "the four worked examples in her Q8 answer are passing tests — q48h, weekly, loading plus maintenance, a three-segment taper — and the 20 existing tests still pass", met: true, evidence: "33/33 tests green (was 20; +7 locking SME Q7's single-dose-vial rule, +6 for Q8's four shapes). Her four worked examples all reproduce exactly: q48h 10 days = 5 doses over a 10-day supply; weekly x 6 weeks = 6 doses over 42 days; 1000mg loading + 500mg q24h x 13 = 14 administrations and 15 vials; q8h/q12h/q24h taper = 30 doses over a 15-day supply. doses_per_day() now RAISES for q48h/weekly/once rather than inventing a daily multiplier. Evals still 8 pass / 0 fail / 2 skip."}
+      - {id: S1-G4, text: "the 21 cases are in evals/cases with their judgment notes, and run_evals.py scores each one green or with a written reason it cannot be", met: false}
+      - {id: S1-G5, text: "the coding judgment layer exists, the eval coding dimension scores it against the library's ICD choices, and the first number is recorded whatever it is", met: false}
+      - {id: S1-G8, text: "CMM questionnaire answers are produced, three-state, and scored by an eval dimension of their own — measured on the library, 47% of questions are correctly blank and no dimension scores any of it today", met: false}
+      - {id: S1-G6, text: "each of the five denial reasons has a check with a test behind it, and the three Part-D-denied / Part-B-eligible cases are flagged before submission", met: false}
+      - {id: S1-G7, text: "a specialist takes one real referral through the tool end to end and submits from its output", met: false}
+
+  - id: S2
+    name: After that
+    status: todo
+    goal: The explicit bucket, so S1 stays finite. Nothing here blocks a usable copilot and nothing here is scheduled — which rung of the calibration ladder is needed gets found by measurement, not planned.
+    gates:
+      - {id: S2-G1, text: "not blocking — this column exists so open-ended improvement has somewhere to sit other than a real stage", met: false}
+
+# Every cell holding more than one block is named, or the board falls back to
+# its coordinate and cannot say what it is (D-82).
+cells:
+  - {ws: EVAL,    stage: S0, jira_key: null, name: "Experiment #1, the scorecard, and the five-dimension harness"}
+  - {ws: CALC,    stage: S0, jira_key: null, name: "The deterministic layer, and the scope the SME set on it"}
+  - {ws: CALC,    stage: S1, jira_key: null, name: "Schedule-driven quantities, the vial rule locked, per-diem by benefit"}
+  - {ws: JUDGE,   stage: S1, jira_key: null, name: "Coding rules, the judgment layer, the questionnaire layer, and the two dimensions that score them"}
+  - {ws: GATE,    stage: S1, jira_key: null, name: "The five denial reasons, and the two numbers that must not be conflated"}
+  - {ws: EVAL,    stage: S1, jira_key: null, name: "Privacy, the decision trail, and 21 cases becoming evidence"}
+  - {ws: PRODUCT, stage: S1, jira_key: null, name: "Model abstraction, PDF intake, review surface"}
+  - {ws: PRODUCT, stage: S2, jira_key: null, name: "Compliance, then a pilot"}
+
+tasks:
+  # ================= S0 · built, 2026-07-30 to 08-03 =================
+  - {id: T-h-prompt, title: "The 12 rules encoded as a system prompt",
+     body: "The SME's workflow reference, Part 1, turned into system_prompt.md — the first testable artifact the project had. Later amended when nursing coding left scope.",
+     origin: plan, jira_key: null, workstream: EXTRACT, stage: S0,
+     supports: [S0-G1], status: done, depends_on: []}
+  - {id: T-h-experiment, title: "Experiment #1, and the three failures that became the pipeline",
+     body: "A fresh LLM given the rules and a redacted real case scored ~85%. Every arithmetic answer right, the hardest judgment call reproduced. Wrong ICD depth, service codes in the one-liner and a Yes answered by inference each became a structural fix rather than a prompt patch.",
+     origin: plan, jira_key: null, workstream: EVAL, stage: S0,
+     supports: [S0-G1], status: done, depends_on: [T-h-prompt]}
+  - {id: T-h-calc, title: "pa_calc.py — the deterministic calculation layer",
+     body: "Inclusive day counting, vials per dose rounded up before multiplying, J-code units computed independently of vial count, and the one-liner template. An unknown drug or frequency raises rather than guessing.",
+     origin: plan, jira_key: null, workstream: CALC, stage: S0,
+     supports: [S0-G2], status: done, depends_on: []}
+  - {id: T-h-pipeline, title: "pipeline.py — the zero-trust gate",
+     body: "LLM output is testimony, not fact. A missing source quote, a missing start date or a non-whitelisted frequency is a hard error that halts the pipeline; an honest null passes with a warning. That distinction is the whole design.",
+     origin: plan, jira_key: null, workstream: GATE, stage: S0,
+     supports: [S0-G2], status: done, depends_on: [T-h-calc]}
+  - {id: T-h-evals, title: "The five-dimension scorer, and the bug that punished honest flags",
+     body: "extraction, calc, coding, format, safety — scored per case, so a change that fixes one dimension and breaks another is visible. forbidden_in_output was being checked against the warning flags too, scoring a correct 'not documented' warning as a violation; now checked only against the submission line.",
+     origin: plan, jira_key: null, workstream: EVAL, stage: S0,
+     supports: [S0-G2], status: done, depends_on: [T-h-pipeline]}
+  - {id: T-h-nursing, title: "Nursing codes removed from the AI workflow",
+     body: "The SME ruled the doc's nursing figures were examples, not a table. Removed from pa_calc.py, banned in both eval cases, pinned by a test, logged with the date and her words. Code plus test plus eval ban plus quote — the template for every ruling since.",
+     origin: plan, jira_key: null, workstream: CALC, stage: S0,
+     supports: [S0-G3], status: done, depends_on: []}
+  - {id: T-h-ladder, title: "Calibration ladder set: no fine-tuning for v1",
+     body: "Prompt rules, then few-shot from the case library, then RAG over cases, then model routing behind a thin API abstraction. SFT or LoRA only at a plateau over thousands of cases. Preference training named as 6+ months and volume-dependent, not promised.",
+     origin: plan, jira_key: null, workstream: PRODUCT, stage: S0,
+     supports: [S0-G3], status: done, depends_on: []}
+
+  # ================= S1 · to a usable copilot =================
+  # The order lives here, in depends_on — `matrix brief S1` reads it out as
+  # dependency waves. Two things start today: the privacy sweep, and locking
+  # the vial rule BEFORE the schedule refactor can quietly break it.
+  - {id: T-privacy-sweep, title: "Clear the surviving identifier and re-scan all 42 case PDFs",
+     body: "CASE-002's page still carries a portal header naming the logged-in user. One occurrence found, but the SME's own README says automated de-identification still needs a human privacy review — so the sweep is the gate, not the single fix.",
+     origin: plan, jira_key: null, workstream: EVAL, stage: S1,
+     supports: [S1-G2], status: todo, depends_on: []}
+  - {id: T-sme-trail, title: "Log all eight answers with date and verbatim quote",
+     body: "Append Q1-Q8 to memory/sme_answers.md following the 08-03 template, so the reasoning survives the session that read it and later work can cite the ruling rather than reconstruct it.",
+     origin: plan, jira_key: null, workstream: EVAL, stage: S1,
+     supports: [S1-G1], status: todo, depends_on: []}
+  - {id: T-doc-earns-code, title: "Q1 and Q2 — let the documentation earn the code",
+     body: "T81.41/42/43 each need documented depth; T81.49XA is honest when a site infection is established and depth is not. Organism codes are add-ons, never replacements. Carries the counter-examples: drainage, debridement, hardware and a positive culture are none of them evidence.",
+     origin: plan, jira_key: null, workstream: JUDGE, stage: S1,
+     supports: [S1-G1], status: todo, depends_on: []}
+  - {id: T-route-algorithm, title: "Q5 — the diagnosis-route algorithm and its three worked pairs",
+     body: "What is the drug treating, which documented diagnosis most directly supports that under this benefit, and never upgrade for coverage. Her three pairs: catheter infection vs bacteraemia, N39.0 vs N10, cellulitis vs abscess. Severity never earns specificity the chart does not.",
+     origin: plan, jira_key: null, workstream: JUDGE, stage: S1,
+     supports: [S1-G1], status: todo, depends_on: []}
+  - {id: T-perdiem-rule, title: "Q4 — per-diem codes decided by benefit, not by drug count",
+     body: "Which benefit, then what is actually being authorized, then frequency. Medication-only and CMM submissions carry no S-code at all. S9500/S9501/S9502 map to daily/BID/q8h only once home-infusion services are in scope. Drug count is explicitly not a factor.",
+     origin: plan, jira_key: null, workstream: CALC, stage: S1,
+     supports: [S1-G1], status: todo, depends_on: []}
+  - {id: T-sdv-regression, title: "Lock the single-dose-vial rule before the refactor touches it",
+     body: "Round up to whole vials per dose, then multiply — already correct in pa_calc.py, and exactly what a phase refactor could quietly break. Her worked example is the test: 700mg from 500mg vials for 30 days is 60 vials, never 42.",
+     origin: plan, jira_key: null, workstream: CALC, stage: S1,
+     supports: [S1-G3], status: done, depends_on: []}
+  - {id: T-phase-model, title: "DrugOrder becomes a dosing schedule, not a frequency and a span",
+     body: "total_doses = per_day * days is the generic daily multiplier the SME rejected outright. Replace it with phases built forward from the start-of-care date and counted, so dose count and day supply become two separate answers instead of one.",
+     origin: plan, jira_key: null, workstream: CALC, stage: S1,
+     supports: [S1-G3], status: done, depends_on: [T-sdv-regression]}
+  - {id: T-unusual-schedules, title: "q48h, weekly, loading plus maintenance, and tapers",
+     body: "Her four shapes. q48h from 08/01 for 10 days is five doses over a ten-day supply. 1000mg once then 500mg q24h for 13 days is 14 administrations, not 14 identical ones. A q8h/q12h/q24h taper over 15 days is 30 doses across three segments, never an averaged frequency.",
+     origin: plan, jira_key: null, workstream: CALC, stage: S1,
+     supports: [S1-G3], status: done, depends_on: [T-phase-model]}
+  - {id: T-supply-vs-doses, title: "Day supply and dose count must not be conflated downstream",
+     body: "A 30-day authorization does not mean 30 doses. Once schedules are sparse the two diverge routinely, so the worksheet and the one-liner must state each separately and the validator must notice when one has been used as the other.",
+     origin: plan, jira_key: null, workstream: GATE, stage: S1,
+     supports: [S1-G3], status: todo, depends_on: [T-phase-model]}
+  - {id: T-cmm-parser, title: "Pull the submitted values out of the CMM PDFs",
+     body: "Drug, quantity, day supply and primary ICD-10 are present as filled form fields — the specialist's own ground truth. The extractor has to survive a watermark whose text layer interleaves with the answers, so parsed output needs eyeballing before it becomes an expectation.",
+     origin: plan, jira_key: null, workstream: EVAL, stage: S1,
+     supports: [S1-G4], status: todo, depends_on: []}
+  - {id: T-case-conversion, title: "21 cases into evals/cases, each with its reasoning",
+     body: "One directory per case per evals/README.md. judgment_notes is not optional: the SME said the reasoning is worth more than the submission, and a case without it can score a number but cannot teach the judgment layer anything.",
+     origin: plan, jira_key: null, workstream: EVAL, stage: S1,
+     supports: [S1-G4], status: todo, depends_on: [T-cmm-parser, T-phase-model]}
+  - {id: T-drug-table-gap, title: "Flag the library's drugs that have no J-code entry",
+     body: "The lookup holds four anti-infectives; the library contains Leqembi, Kisunla, Gammagard, zoledronic acid, milrinone, Vabomere and more. Whether the table grows or is replaced by a real HCPCS source is open (Q-02) — until then an unknown drug must keep flagging rather than guessing.",
+     origin: plan, jira_key: null, workstream: CALC, stage: S1,
+     supports: [S1-G4], status: todo, depends_on: []}
+  - {id: T-judge-layer, title: "Build layer 4 — ICD route selection as a constrained call",
+     body: "The only layer in the architecture that has never existed. Few-shot from her reasoning in Q1, Q2 and Q5 plus judgment_notes from the library. Constrained, auditable, still reviewed by a specialist — never a free agent.",
+     origin: plan, jira_key: null, workstream: JUDGE, stage: S1,
+     supports: [S1-G5], status: todo, depends_on: [T-doc-earns-code, T-route-algorithm, T-case-conversion]}
+  - {id: T-coding-dimension, title: "Flip the coding dimension to score the judgment layer",
+     body: "Today it asserts the extractor emits no ICD codes — the right test while layer 4 is absent and the wrong one the moment it exists. Rewrite it to score the layer's output against each case's expected icd_codes, and record the first number.",
+     origin: plan, jira_key: null, workstream: JUDGE, stage: S1,
+     supports: [S1-G5], status: todo, depends_on: [T-judge-layer]}
+  - {id: T-cmm-answering, title: "Answer the payer questionnaire — three-state, never a bare Yes",
+     body: "The third declared output that nothing produces, validates or scores. Answered carries its chart quotes; NotApplicable is an off-branch blank and correct; Unsupported is a wanted Yes with no evidence, which becomes a BLOCK finding instead of an answer.",
+     origin: plan, jira_key: null, workstream: JUDGE, stage: S1,
+     supports: [S1-G8], status: todo, depends_on: [T-case-conversion]}
+  - {id: T-cmm-dimension, title: "A sixth eval dimension for questionnaire answers",
+     body: "expected.json gains cmm_answers and run_evals.py gains a cmm dimension. Scored per question against all three states — comparing values alone would grade a correct blank and a missed answer identically, which is the failure the layer exists to prevent.",
+     origin: plan, jira_key: null, workstream: JUDGE, stage: S1,
+     supports: [S1-G8], status: todo, depends_on: [T-cmm-answering]}
+  - {id: T-five-checks, title: "The five denial reasons become five checks",
+     body: "Diagnosis support, missing clinical evidence, order-to-documentation match, formulary and step therapy, quantity/coding/benefit accuracy. Her framing is the spec: flag where a payer is likely to challenge while there is still time to fix it, rather than making a case look approvable.",
+     origin: plan, jira_key: null, workstream: GATE, stage: S1,
+     supports: [S1-G6], status: todo, depends_on: []}
+  - {id: T-order-mismatch, title: "Compare the request against the signed order",
+     body: "Dose, frequency, start, end, day supply and total quantity, checked against the order and the clinical plan. She wrote the warning text herself — requested 21 days, signed order supports 9, updated documentation may be required — so the wording is given rather than designed.",
+     origin: plan, jira_key: null, workstream: GATE, stage: S1,
+     supports: [S1-G6], status: todo, depends_on: [T-five-checks]}
+  - {id: T-benefit-routing, title: "Flag Part B versus Part D risk — a warning, never a reroute",
+     body: "Three library cases were denied under Part D and were Part B territory, the payer citing the DME infusion-pump rule. Scoped as a flag that cites the rule and hands the call to the specialist. Revisit if she wants the benefit selected outright — Q-03.",
+     origin: plan, jira_key: null, workstream: GATE, stage: S1,
+     supports: [S1-G6], status: todo, depends_on: [T-five-checks, T-case-conversion]}
+  - {id: T-model-abstraction, title: "A thin model API layer so models stay configuration",
+     body: "Required by the calibration ladder: cheap model for extraction, strongest for judgment, swapped without touching pipeline code. Everything before this runs from hand-written JSON, which is why it has not been needed yet.",
+     origin: plan, jira_key: null, workstream: PRODUCT, stage: S1,
+     supports: [S1-G7], status: todo, depends_on: []}
+  - {id: T-pdf-intake, title: "Referral PDF to text the extractor can read",
+     body: "Real referrals arrive as PDFs, some scanned. Text extraction with OCR where a page has no text layer, and an explicit refusal rather than a silent empty string when a page yields nothing.",
+     origin: plan, jira_key: null, workstream: PRODUCT, stage: S1,
+     supports: [S1-G7], status: todo, depends_on: []}
+  - {id: T-review-surface, title: "The specialist's review and correction surface",
+     body: "The worksheet becomes something she can approve or correct rather than read. Her corrections are the training signal the ladder's later rungs need, so capturing the edit matters as much as rendering the output.",
+     origin: plan, jira_key: null, workstream: PRODUCT, stage: S1,
+     supports: [S1-G7], status: todo, depends_on: [T-model-abstraction, T-coding-dimension]}
+
+  # ================= S2 · after that =================
+  - {id: T-hipaa, title: "Production compliance: BAA, encryption, access controls",
+     body: "Development runs on redacted data only. Before anything touches real patient data: a BAA with the model vendor, encryption, access controls, and advice from someone who does this for a living.",
+     origin: plan, jira_key: null, workstream: PRODUCT, stage: S2,
+     supports: [S2-G1], status: todo, depends_on: []}
+  - {id: T-pilot, title: "Pilot with the specialist on live work",
+     body: "Roughly four weeks per the AGENT.md estimate, and the first real measurement of whether the copilot framing holds outside a case library.",
+     origin: plan, jira_key: null, workstream: PRODUCT, stage: S2,
+     supports: [S2-G1], status: todo, depends_on: [T-review-surface, T-hipaa]}
+  - {id: T-ladder-rungs, title: "The calibration ladder past few-shot",
+     body: "RAG over the case library, then model routing. Deliberately unscheduled: which rung is needed is found by measurement once the judgment layer has a score, not planned in advance.",
+     origin: plan, jira_key: null, workstream: JUDGE, stage: S2,
+     supports: [S2-G1], status: todo, depends_on: [T-coding-dimension]}
+
+# Parked ideas — the parking lot (D-36). Human-owned, minimal: text plus
+# optional ws/stage hints; no ids, no status, no Jira. `matrix todo`
+# captures/lists/drops; `matrix promote N --id T-x` turns one into a block.
+todos:
+  - {text: "DrugCalc mixes data with presentation: dose_display and frequency are ' -> '-joined strings. Layer 4 and the eval scorer need the dose and frequency sequences structured, so split rendering out then."}
+  - {text: "Two modules in src/ is fine, but S1 adds roughly six more (scheduling, judgment, CMM answering, preflight, findings). Split into per-layer directories at the FOURTH module, not once ten files are crowded together."}
+  - {text: "render_worksheet() concatenates strings directly. In the design the worksheet is structured (Finding[] with severity/evidence/fix) and rendering is the last step. Fix it while building layer 5."}
+  - {text: "No pytest configuration: the tests only import because pytest prepends rootdir to sys.path, and the evals rely on one sys.path.insert. Make it explicit with a pyproject.toml or a conftest.py."}
+  - {text: "Retire or merge docs/overview.html: its section 1-5 now overlap heavily with the design doc's sections 0-2 and its glossary. Two documents covering the same ground will drift. Decide which one is the entry point once the SME's answers land and both need updating anyway."}

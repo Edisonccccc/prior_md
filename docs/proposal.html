@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PriorMD — Proposal & Interview</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1c2333; --muted:#5d6678; --line:#e3e7f0;
+    --accent:#3b6fe0; --accent-soft:#eaf0fd; --green:#1f9d6b; --green-soft:#e6f6ef;
+    --amber:#b97d16; --amber-soft:#fdf3e0; --violet:#7a53c9; --violet-soft:#f1ebfb;
+    --mono:'SF Mono',Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.6}
+  /* Default is scroll mode: everything stacked vertically, no JS required.
+     Phones, iOS Quick Look and JS-disabled environments can read and fill it
+     in completely. */
+  .deck{position:relative}
+  .slide{display:block;padding:40px 6vw 48px;border-bottom:1px solid var(--line)}
+  .nav{display:none}
+  /* Deck mode: enabled via body.deckmode only when JS detects a wide screen */
+  body.deckmode{overflow:hidden}
+  body.deckmode .deck{height:100vh}
+  body.deckmode .slide{position:absolute;inset:0;display:none;flex-direction:column;padding:5vh 8vw 12vh;overflow-y:auto;border-bottom:none}
+  body.deckmode .slide.active{display:flex}
+  body.deckmode .nav{display:flex}
+  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:800;margin-bottom:10px}
+  h1{font-size:clamp(28px,4.6vw,46px);font-weight:800;line-height:1.2;margin-bottom:16px}
+  h2{font-size:clamp(22px,3vw,32px);font-weight:800;margin-bottom:14px;line-height:1.3}
+  p.lead{font-size:clamp(15px,1.5vw,18px);color:var(--muted);max-width:62ch}
+  .cards{display:grid;gap:14px;margin-top:20px}
+  .c2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  .c3{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:0 1px 3px rgba(28,35,51,.05)}
+  .card h3{font-size:16px;margin-bottom:6px}
+  .card p{font-size:13.5px;color:var(--muted)}
+  .tag{display:inline-block;font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px;margin-bottom:8px;letter-spacing:.04em}
+  .t-blue{background:var(--accent-soft);color:var(--accent)}
+  .t-green{background:var(--green-soft);color:var(--green)}
+  .t-amber{background:var(--amber-soft);color:var(--amber)}
+  .t-violet{background:var(--violet-soft);color:var(--violet)}
+  .oneliner{background:#10131c;color:#c9d4f5;border-radius:12px;padding:16px 18px;font-family:var(--mono);font-size:12.5px;line-height:1.7;margin-top:18px;overflow-x:auto}
+  .why{background:var(--amber-soft);border:1px solid #f0dfb8;border-radius:12px;padding:14px 18px;margin-top:18px;font-size:14px}
+  .why b{color:var(--amber)}
+  .qblock{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-top:14px;box-shadow:0 1px 3px rgba(28,35,51,.05)}
+  .qblock .qtitle{font-weight:700;font-size:15px;margin-bottom:4px}
+  .qblock .qwhy{font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px}
+  .qblock textarea{width:100%;min-height:76px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;resize:vertical;background:#fbfcfe}
+  .qblock textarea:focus{outline:2px solid var(--accent);border-color:transparent}
+  .answered{border-left:4px solid var(--green)}
+  .answered .qtitle::after{content:" ✓ answered — thank you!";color:var(--green);font-size:12.5px}
+  .answered p.ansbody{font-size:13.5px;background:var(--green-soft);border-radius:8px;padding:10px 12px;color:#20543f}
+  table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(28,35,51,.05)}
+  th{text-align:left;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 14px;background:#fbfcfe;border-bottom:1px solid var(--line)}
+  td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);align-items:center;justify-content:space-between;padding:12px 8vw;z-index:10}
+  .nav button{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 22px;font-size:14px;font-weight:700;cursor:pointer}
+  .nav button:disabled{background:#c6cede;cursor:default}
+  .nav .dots{display:flex;gap:6px}
+  .nav .dot{width:8px;height:8px;border-radius:50%;background:#c6cede;cursor:pointer;transition:.15s}
+  .nav .dot.on{background:var(--accent);transform:scale(1.3)}
+  .pgnum{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .btn-big{display:inline-block;background:var(--green);color:#fff;border:none;border-radius:12px;padding:14px 30px;font-size:16px;font-weight:800;cursor:pointer;margin-top:18px}
+  .btn-ghost{display:inline-block;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:14px 24px;font-size:15px;font-weight:700;cursor:pointer;margin-top:18px;margin-left:10px}
+  #preview{display:none;margin-top:18px;width:100%;min-height:220px;border:1px solid var(--line);border-radius:12px;padding:14px;font-family:var(--mono);font-size:12.5px;background:#fbfcfe;white-space:pre-wrap}
+  .savehint{font-size:13px;color:var(--muted);margin-top:12px}
+  ul.clean{margin:14px 0 0 18px;font-size:14.5px;color:var(--muted);display:grid;gap:8px}
+  ul.clean b{color:var(--ink)}
+  .footnote{margin-top:auto;padding-top:20px;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- SLIDE 1 -->
+<section class="slide active">
+  <div class="kicker">PriorMD · Proposal & Progress</div>
+  <h1>An AI Assistant for<br>Prior Authorization Casework</h1>
+  <p class="lead">Where the project stands, where it's going, and the input we need from you to build the next phase. The last section of this deck is interactive — you can type your answers directly in and export them with one click.</p>
+  <div class="cards c3" style="margin-top:28px">
+    <div class="card"><div class="tag t-green">Done</div><h3>Working prototype</h3><p>Reproduces your worked case end-to-end, math verified by automated tests.</p></div>
+    <div class="card"><div class="tag t-amber">Needed</div><h3>Your expertise</h3><p>7 short questions + past case examples. Fillable right in this document.</p></div>
+    <div class="card"><div class="tag t-blue">Next</div><h3>Usable tool</h3><p>Upload referral → draft PA output → you review and submit.</p></div>
+  </div>
+  <p class="footnote">Prepared by Edison · Updated 2026-08-03 · 💻 On a computer this shows as slides (arrow keys / buttons) · 📱 On a phone, just scroll down</p>
+</section>
+
+<!-- SLIDE 2 -->
+<section class="slide">
+  <div class="kicker">The Goal</div>
+  <h2>Referral packet in → submission-ready output out</h2>
+  <p class="lead">The system reads the clinical documents and produces the draft you would have written — the PA one-liner, CMM answers, and flags for anything missing or inconsistent. You review, correct if needed, and submit. Nothing goes out without your approval.</p>
+  <div class="oneliner">Services Requested: Cefepime 2g vial IV q12h (Dose: 2g, Total Qty: 84 vials) + Daptomycin 500mg vial IV q24h (Dose: 335mg, Total Qty: 42 vials) – J0692 x336, J0878 x14070 for T81.49XA + L08.9<br><br>Dates of Service: 07/24/2026 to 09/03/2026 (42 day supply).</div>
+  <p class="savehint">↑ This is the prototype's actual output for your elbow ORIF case — identical to what you submitted, generated from the referral alone.</p>
+  <div class="why"><b>Scope (per your 8/03 note):</b> the core product is medication adjudication — drug, quantity, J-codes, diagnosis codes. Nursing coding has been removed from the AI workflow entirely; provider-specific extras stay manual.</div>
+</section>
+
+<!-- SLIDE 3 -->
+<section class="slide">
+  <div class="kicker">How It Works</div>
+  <h2>The AI reads and drafts. Code does all the math. You stay in charge.</h2>
+  <div class="cards c3">
+    <div class="card"><div class="tag t-amber">AI</div><h3>1 · Read & extract</h3><p>Pulls drug, dose, frequency, dates, diagnoses from the documents — and must cite the exact sentence for every value. If something isn't documented, it says so instead of guessing.</p></div>
+    <div class="card"><div class="tag t-green">Code</div><h3>2 · Verify & calculate</h3><p>Day supply, vial counts, and J-code units are computed by tested software, never by the AI — so quantities can't drift or be "creative."</p></div>
+    <div class="card"><div class="tag t-blue">You</div><h3>3 · Review & submit</h3><p>You get a worksheet: numbers, draft one-liner, and warnings (e.g., "order supports 14 days but request is 21"). Your corrections make the system smarter.</p></div>
+  </div>
+  <div class="why"><b>Quality control:</b> every case you've solved correctly becomes a permanent automated test. Any future change to the system must pass every one of them before going live. Today: 20 code tests + 8 evaluation checks, all passing.</div>
+</section>
+
+<!-- SLIDE 4 -->
+<section class="slide">
+  <div class="kicker">Progress So Far</div>
+  <h2>A preliminary study — built to understand the work, and it worked</h2>
+  <p class="lead">Everything below came from your reference document alone. It's deliberately early-stage: the goal was to prove the approach before investing in the full build.</p>
+  <table>
+    <tr><th>What we did</th><th>Result</th></tr>
+    <tr><td>Fed your 12 rules + a redacted version of your case to the AI (with the answers hidden)</td><td>~85% match on first try — all quantity math correct, and it correctly avoided the hardware-infection code route for Part D</td></tr>
+    <tr><td>Moved all calculations into tested software</td><td>Output now matches your submitted one-liner character-for-character</td></tr>
+    <tr><td>Built the document-reading layer with a "no guessing" gate</td><td>It even flagged that the chart lacked a patient weight for weight-based daptomycin dosing</td></tr>
+    <tr><td>Stress-tested your reference doc</td><td>Found the nursing-units inconsistency → you clarified → nursing coding removed from AI scope within the day</td></tr>
+  </table>
+  <p class="savehint">That last row is the collaboration loop working exactly as designed: your feedback → system updated → new permanent test added.</p>
+</section>
+
+<!-- SLIDE 5 -->
+<section class="slide">
+  <div class="kicker">Roadmap</div>
+  <h2>Three near-term phases, then long-term learning</h2>
+  <table>
+    <tr><th>Phase</th><th>What happens</th><th>Timeline</th></tr>
+    <tr><td><b>1 · Usable MVP</b></td><td>Upload a referral PDF → get the draft worksheet in a simple web page</td><td>2–4 weeks</td></tr>
+    <tr><td><b>2 · Judgment layer</b></td><td>Your interview answers + past cases teach the system diagnosis-code selection — the part that needs your expertise most</td><td>3–6 weeks<br><span style="color:var(--amber)">gated on your input</span></td></tr>
+    <tr><td><b>3 · Pilot</b></td><td>You use it on real daily cases; every correction you make becomes training material and a new test</td><td>~4 weeks</td></tr>
+    <tr><td><b>4 · Long-term learning</b></td><td>Once volume justifies it: <b>preference training</b> (the model learns directly from your accept/edit decisions during the pilot) and <b>online policy distillation</b> (compressing that learned judgment into a faster, cheaper model that keeps improving as you work). These are significant, longer-horizon efforts — listed here so the full vision is on the table, not promised for v1.</td><td>6+ months, volume-dependent</td></tr>
+  </table>
+</section>
+
+<!-- SLIDE 6 -->
+<section class="slide">
+  <div class="kicker">Why We Need the Questionnaire</div>
+  <h2>Your written rules got us to 85%.<br>The last 15% lives in your head.</h2>
+  <ul class="clean">
+    <li><b>The math is solved.</b> Dates, vials, units — software handles those perfectly now. Every remaining gap is a <b>judgment call</b>.</li>
+    <li><b>Example:</b> for the elbow case, the AI picked T81.42XA + organism codes — defensible, but you picked T81.49XA + L08.9. Both "follow the rules." Only yours reflects how payers actually behave. <b>We can't write that rule without knowing your why.</b></li>
+    <li><b>Each answer becomes a permanent rule + test.</b> This isn't a survey that gets read once — your answers are compiled directly into the system's logic, the way your nursing-codes note already was.</li>
+    <li><b>Past cases are the highest-value item.</b> Every solved case becomes (a) an example the AI consults when judging similar cases, and (b) a test it must pass forever.</li>
+  </ul>
+  <div class="why"><b>How to fill it out:</b> the next 3 slides have text boxes — type directly in them ("it depends" is a great answer; just say what it depends on). Then hit <b>Generate My Answers</b> on the last slide and send Edison the downloaded file. 10–15 minutes total.</div>
+</section>
+
+<!-- SLIDE 7 -->
+<section class="slide">
+  <div class="kicker">Questionnaire · 1 of 3</div>
+  <h2>Diagnosis coding — the judgment we most need to capture</h2>
+
+  <div class="qblock answered">
+    <div class="qtitle">Q3 · Nursing units for 28-day supply</div>
+    <p class="ansbody">Your answer (8/03): the doc's figures were examples only — varies by service dates/day supply, mostly weekly. Nursing coding removed from the AI workflow. Done ✓</p>
+  </div>
+
+  <div class="qblock">
+    <div class="qtitle">Q1 · Why T81.49XA rather than T81.42XA for the elbow case?</div>
+    <div class="qwhy">Why we ask: the AI reasoned its way to .42XA (deep incisional). Your pick wins with payers — we need the rule behind it. Is .49XA your general default for post-op infections? What would make you use .41/.42/.43 instead?</div>
+    <textarea id="q1" placeholder="Type your answer here…"></textarea>
+  </div>
+
+  <div class="qblock">
+    <div class="qtitle">Q2 · Why L08.9 as secondary, instead of the organism codes?</div>
+    <div class="qwhy">Why we ask: Pseudomonas and MRSA were documented on cultures, so B96.5/B95.62 were available — you used L08.9 instead. When do organism codes go on a PA, and when do you leave them off even though they're documented?</div>
+    <textarea id="q2" placeholder="Type your answer here…"></textarea>
+  </div>
+
+  <div class="qblock">
+    <div class="qtitle">Q4 · When do per-diem codes (S9500/S9501/S9502) go into the one-liner?</div>
+    <div class="qwhy">Why we ask: your Aztreonam example includes S9502; the Cefepime + Daptomycin one-liner has J-codes only. What decides — payer type, drug count, something else?</div>
+    <textarea id="q4" placeholder="Type your answer here…"></textarea>
+  </div>
+</section>
+
+<!-- SLIDE 8 -->
+<section class="slide">
+  <div class="kicker">Questionnaire · 2 of 3</div>
+  <h2>Patterns from your day-to-day judgment</h2>
+
+  <div class="qblock">
+    <div class="qtitle">Q5 · More "diagnosis route" examples like the hardware call</div>
+    <div class="qwhy">Why we ask: the "don't lead with hardware infection on Part D" decision was the single most valuable judgment in the case. 2–3 more examples where two routes were both documentable and you deliberately chose one for coverage reasons (line infections? UTI vs pyelo? cellulitis vs abscess?) would multiply what the system can handle.</div>
+    <textarea id="q5" placeholder="Example 1…&#10;Example 2…"></textarea>
+  </div>
+
+  <div class="qblock">
+    <div class="qtitle">Q6 · Top 3–5 reasons your PAs get denied</div>
+    <div class="qwhy">Why we ask: every preventable denial reason becomes an automatic pre-submission check — the system warns you before the payer ever sees it.</div>
+    <textarea id="q6" placeholder="1.&#10;2.&#10;3."></textarea>
+  </div>
+</section>
+
+<!-- SLIDE 9 -->
+<section class="slide">
+  <div class="kicker">Questionnaire · 3 of 3</div>
+  <h2>Edge cases + the case library</h2>
+
+  <div class="qblock">
+    <div class="qtitle">Q7 · Vial rounding & wastage rules</div>
+    <div class="qwhy">Why we ask: so the quantity math handles every drug correctly. Always round up to whole vials? Any payers/drugs where wastage is billed separately or exact mg is expected? Weight-based doses that change mid-course?</div>
+    <textarea id="q7" placeholder="Type your answer here…"></textarea>
+  </div>
+
+  <div class="qblock">
+    <div class="qtitle">Q8 · Unusual frequencies</div>
+    <div class="qwhy">Why we ask: the math engine currently handles q6h/q8h/q12h/q24h/daily. How do you count doses and day supply for q48h, once-weekly drugs (e.g., dalbavancin), loading + maintenance, or tapers?</div>
+    <textarea id="q8" placeholder="Type your answer here…"></textarea>
+  </div>
+
+  <div class="qblock">
+    <div class="qtitle">Case library · the single most valuable thing you can share</div>
+    <div class="qwhy">Why we ask: 10–20 past cases you consider solved correctly (referral + your final submitted output + payer response if available). Remove patient name/DOB/MRN first. Ideal mix: varied drugs, Part D and commercial, 2–3 denials with appeals, 2–3 tricky judgment calls with a sentence on why. Use this box for questions/notes about it (e.g., how you'd prefer to share them):</div>
+    <textarea id="qcases" placeholder="e.g., I can export PDFs from our system, easiest to share via…"></textarea>
+  </div>
+</section>
+
+<!-- SLIDE 10 -->
+<section class="slide">
+  <div class="kicker">Finish</div>
+  <h2>Generate your answer file</h2>
+  <p class="lead">Click below — a small text file with your answers will download. Send it back to Edison by email or text. You can also preview it first.</p>
+  <div>
+    <button class="btn-big" onclick="generateFile(true)">⬇ Download (.txt)</button>
+    <button class="btn-ghost" onclick="copyAnswers(this)">📋 Copy answers</button>
+    <button class="btn-ghost" onclick="emailAnswers()">✉️ Email answers</button>
+    <button class="btn-ghost" onclick="generateFile(false)">Preview</button>
+  </div>
+  <div id="preview"></div>
+  <p class="savehint">💻 On a computer: use <b>Download</b>. 📱 On a phone: <b>Copy answers</b> then paste into a text/email, or tap <b>Email answers</b> to open a pre-filled email.<br><br>⚠️ This page doesn't save automatically — please export before closing it. Partial answers are fine; you can always send a second round later.<br><br>Thank you! Your answers go straight into the system's rules — like your nursing-codes note already did. — Edison</p>
+</section>
+
+</div>
+
+<div class="nav">
+  <button id="prev" onclick="go(-1)">← Back</button>
+  <div class="dots" id="dots"></div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span class="pgnum" id="pg"></span>
+    <button id="next" onclick="go(1)">Next →</button>
+  </div>
+</div>
+
+<script>
+  // Deck mode turns on only when JS runs AND the screen is wide (a laptop).
+  // Phones and Quick Look stay in plain scroll mode, where everything is
+  // visible without any scripting at all.
+  const slides=[...document.querySelectorAll('.slide')];
+  let cur=0, deckMode=false;
+  try{ deckMode = window.matchMedia('(min-width: 760px)').matches; }catch(e){ deckMode=false; }
+
+  function show(i){
+    if(!deckMode) return;
+    slides[cur].classList.remove('active');
+    cur=Math.max(0,Math.min(slides.length-1,i));
+    slides[cur].classList.add('active');
+    const dots=document.getElementById('dots');
+    [...dots.children].forEach((d,j)=>d.classList.toggle('on',j===cur));
+    document.getElementById('pg').textContent=(cur+1)+' / '+slides.length;
+    document.getElementById('prev').disabled=cur===0;
+    document.getElementById('next').disabled=cur===slides.length-1;
+    slides[cur].scrollTop=0;
+  }
+  function go(d){show(cur+d);}
+
+  if(deckMode){
+    document.body.classList.add('deckmode');
+    slides[0].classList.add('active');
+    const dots=document.getElementById('dots');
+    slides.forEach((_,i)=>{const d=document.createElement('div');d.className='dot';d.onclick=()=>show(i);dots.appendChild(d);});
+    document.addEventListener('keydown',e=>{
+      if(e.target.tagName==='TEXTAREA')return;
+      if(e.key==='ArrowRight'||e.key==='PageDown')go(1);
+      if(e.key==='ArrowLeft'||e.key==='PageUp')go(-1);
+    });
+    show(0);
+  }
+
+  const QUESTIONS=[
+    ['q1','Q1 - Why T81.49XA rather than T81.42XA for the elbow case?'],
+    ['q2','Q2 - Why L08.9 as secondary, instead of the organism codes?'],
+    ['q4','Q4 - When do per-diem codes (S9500/S9501/S9502) go into the one-liner?'],
+    ['q5','Q5 - More diagnosis-route examples (like the hardware call)'],
+    ['q6','Q6 - Top 3-5 denial reasons'],
+    ['q7','Q7 - Vial rounding & wastage rules'],
+    ['q8','Q8 - Unusual frequencies (q48h, weekly, loading, tapers)'],
+    ['qcases','Case library - notes / how you will share']
+  ];
+  function buildText(){
+    const now=new Date();
+    let out='PriorMD - Specialist Interview Answers\n';
+    out+='Generated: '+now.toLocaleString()+'\n';
+    out+='='.repeat(50)+'\n\n';
+    out+='Q3 - Nursing units: ANSWERED 8/03 (examples only; varies by service dates/day supply; nursing coding removed from AI workflow)\n\n';
+    let answered=0;
+    for(const [id,label] of QUESTIONS){
+      const v=document.getElementById(id).value.trim();
+      out+=label+'\n';
+      out+=(v?v:'[not answered yet]')+'\n\n';
+      if(v)answered++;
+    }
+    out+='-'.repeat(50)+'\n';
+    out+=answered+' of '+QUESTIONS.length+' answered.\n';
+    return out;
+  }
+  function generateFile(download){
+    const text=buildText();
+    const pv=document.getElementById('preview');
+    pv.style.display='block';
+    pv.textContent=text;
+    if(download){
+      const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='PriorMD-Interview-Answers.txt';
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+    }
+  }
+  function copyAnswers(btn){
+    const text=buildText();
+    const pv=document.getElementById('preview');
+    pv.style.display='block'; pv.textContent=text;
+    const done=()=>{const old=btn.textContent;btn.textContent='✓ Copied!';setTimeout(()=>btn.textContent=old,2000);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
+    }else{ fallbackCopy(text,done); }
+  }
+  function fallbackCopy(text,done){
+    const ta=document.createElement('textarea');
+    ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ alert('Copy failed — please select the preview text below and copy manually.'); }
+    ta.remove();
+  }
+  function emailAnswers(){
+    const text=buildText();
+    const pv=document.getElementById('preview');
+    pv.style.display='block'; pv.textContent=text;
+    const subject=encodeURIComponent('PriorMD - Interview Answers');
+    let body=text;
+    // mailto has a length limit — truncate past it and tell them to use copy instead
+    if(body.length>1600){ body=body.slice(0,1600)+'\n\n[Answer text truncated - full version copied via the Copy button]'; }
+    window.location.href='mailto:?subject='+subject+'&body='+encodeURIComponent(body);
+  }
+</script>
+</body>
+</html>

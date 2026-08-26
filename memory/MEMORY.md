@@ -1,0 +1,3 @@
+- [PriorMD project](project_priormd.md) — prior-auth AI; pipeline + evals built, awaiting SME case library
+- [SME answers log](sme_answers.md) — authoritative rule changes from the specialist; 08-03: nursing codes removed, scope = medication adjudication
+- [edison preferences](user_preferences.md) — teach in Chinese, ADHD-friendly chunks, engineer new to healthcare domain

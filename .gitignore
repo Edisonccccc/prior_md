@@ -1,0 +1,23 @@
+# ─── CONFIDENTIAL — never commit, never push ────────────────────────────
+# data/ holds the SME's source documents (Part 2 of the workflow reference
+# contains real patient data) and the 21-case library. Safe Harbor
+# de-identification was applied to the case library, but the SME's own
+# README states a human privacy review is still required before any
+# external disclosure. Treat the whole directory as PHI.
+/data/
+
+# ─── Machine-owned, regenerable ─────────────────────────────────────────
+_matrix/state.json
+_matrix/.matrix-structure.json
+_matrix/artifacts/
+_matrix/out/
+
+# ─── Python ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# ─── macOS ──────────────────────────────────────────────────────────────
+.DS_Store

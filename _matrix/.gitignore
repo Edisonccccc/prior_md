@@ -1,0 +1,21 @@
+# Machine-owned and fully regenerable (D-66) — the plan and discussions.md are
+# the committed half of this directory.
+state.json
+.matrix-structure.json
+out/
+
+# D-245: the activity ledger lives at ~/.matrix/<project.key>/log.jsonl now —
+# outside the checkout, because a checkout is not the project and one project
+# has several. These two lines are for instances created before the move, so a
+# not-yet-migrated ledger and the `.migrated` file left behind stay ignored.
+log.jsonl
+log.jsonl.migrated*
+
+# D-186: `matrix attach` copies a block's output here. The RECORD lives in
+# plan.yaml and is committed; the bytes are not, because eval reports run to
+# megabytes and the board serves them off this machine anyway. A checkout
+# without them shows the record and says the file is not here — which is the
+# truth, and better than a link into nothing.
+#
+# Un-ignore this line if an output is small and belongs with the plan.
+artifacts/

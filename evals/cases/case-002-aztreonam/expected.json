@@ -1,0 +1,26 @@
+{
+  "description": "Aztreonam for chronic sinusitis (J32.9) — the one-liner example from the reference doc, Part 1 Rule 2. Calc/format-only eval (no full referral text available yet).",
+  "source": "PriorMD AI Workflow Reference.docx, Part 1, one-liner example",
+  "payer_type": "unknown",
+  "difficulty": "mechanical",
+
+  "calc": {
+    "start": "2026-07-07",
+    "end": "2026-08-03",
+    "day_supply": 28,
+    "drugs": [
+      { "drug_name": "Aztreonam", "dose_mg": 2000, "vial_size_mg": 2000, "frequency": "q8h",
+        "total_vials": 84, "jcode": "J0834", "jcode_units": 336 }
+    ]
+  },
+
+  "icd_codes": ["J32.9"],
+  "service_codes": [["S9502", 28]],
+
+  "one_liner": "Services Requested: Aztreonam 2g vial IV q8h (Dose: 2g, Total Qty: 84 vials) – J0834 x336, S9502 x28 for J32.9 Dates of Service: 07/07/2026 to 08/03/2026 (28 day supply).",
+
+  "required_flags": [],
+  "forbidden_in_output": ["99601", "99602"],
+
+  "judgment_notes": "RESOLVED 2026-08-03 by SME: the doc's nursing figures (Rule 8 x5/x10 vs this example's x4/x8) were examples only — units vary by service dates/day supply and by provider. SME instructed removing nursing coding from the AI workflow entirely; tool scope is medication adjudication. Expected output updated to exclude 99601/99602, and they are now forbidden_in_output. If a specific provider needs them, the specialist adds them manually."
+}

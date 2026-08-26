@@ -1,0 +1,60 @@
+{
+  "insurance": {
+    "payer_type": "Part D",
+    "source_quote": "Insurance: Medicare Part D plan (drug coverage via Part D / CMM coverage determination expected)."
+  },
+  "therapy_dates": {
+    "start": "2026-07-24",
+    "end": "2026-09-03",
+    "ordered_day_supply": null,
+    "source_quote": "Start date: 07/24/2026. End date: 09/03/2026."
+  },
+  "drugs": [
+    {
+      "drug_name": "Cefepime",
+      "dose_mg": 2000,
+      "vial_size_mg": null,
+      "frequency": "q12h",
+      "frequency_raw": "every 12 hours",
+      "route": "IV",
+      "source_quote": "Cefepime 2g IV every 12 hours"
+    },
+    {
+      "drug_name": "Daptomycin",
+      "dose_mg": 335,
+      "vial_size_mg": 500,
+      "frequency": "q24h",
+      "frequency_raw": "every 24 hours",
+      "route": "IV",
+      "source_quote": "Daptomycin 335mg IV every 24 hours (patient weight-based dosing; dispensed from 500mg single-dose vials)"
+    }
+  ],
+  "clinical": {
+    "documented_diagnoses": [
+      "Right elbow fracture, status post open reduction and internal fixation (ORIF)",
+      "Surgical wound infection at the operative site"
+    ],
+    "organisms_documented": [
+      {"organism": "Pseudomonas aeruginosa", "specimen": "intra-operative wound culture", "source_quote": "Intra-operative wound cultures grew Pseudomonas aeruginosa and MRSA."},
+      {"organism": "MRSA", "specimen": "intra-operative wound culture", "source_quote": "Intra-operative wound cultures grew Pseudomonas aeruginosa and MRSA."}
+    ],
+    "blood_cultures_positive": "false",
+    "osteomyelitis_documented": "not_documented",
+    "hardware_present": "true",
+    "line_type": "PICC",
+    "monitoring_labs": ["CBC", "BMP", "CPK"]
+  },
+  "payer_questionnaire": [
+    "Q1: What is/are the diagnosis code(s) for this request?",
+    "Q2: Is the medication being used for an FDA-approved indication for the documented diagnosis?",
+    "Q3: Is a generic substitution being requested?"
+  ],
+  "missing_or_unclear": [
+    "Ordered day supply is not explicitly stated; only start and end dates are given (07/24/2026 to 09/03/2026), and per instructions no calculation was performed.",
+    "Cefepime vial size is not documented.",
+    "Patient weight for daptomycin weight-based dosing is not documented.",
+    "No ICD/diagnosis codes are provided in the record (payer questionnaire Q1 cannot be answered from the packet).",
+    "Osteomyelitis: record states 'No imaging or clinical documentation of osteomyelitis' — noted as not documented rather than explicitly ruled out.",
+    "Blood cultures: record states 'No blood cultures positive'; it is not stated whether blood cultures were drawn at all."
+  ]
+}

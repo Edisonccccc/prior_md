@@ -1,0 +1,1587 @@
+<title>PriorMD Engine Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;700&family=Caveat:wght@500;600&display=swap">
+
+<style>
+:root{
+--paper:#F2F4F1;
+--surface:#FFFFFF;
+--sunk:#E7EBE6;
+--ink:#17212B;
+--ink-2:#4A5A5B;
+--ink-3:#75847F;
+--rule:#D2D9D2;
+--accent:#0F6E5C;
+--accent-soft:#DCEAE4;
+--human:#4C5BB3;
+--human-soft:#E0E3F5;
+--stamp:#BF3B2B;
+--stamp-soft:#F5DED9;
+--flag:#A9721A;
+--flag-soft:#F6E8CE;
+--shadow:rgba(23,33,43,.10);
+
+--display:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+--body:"Newsreader",Georgia,"Times New Roman",serif;
+--mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+--hand:"Caveat","Bradley Hand",cursive;
+}
+@media (prefers-color-scheme: dark){
+:root:not([data-theme="light"]){
+--paper:#131917; --surface:#1B2321; --sunk:#232C29;
+--ink:#E6EBE7; --ink-2:#AFBCB6; --ink-3:#84968E; --rule:#2E3A36;
+--accent:#5FC0A6; --accent-soft:#1E3630;
+--human:#8E9AE8; --human-soft:#232847;
+--stamp:#E8705C; --stamp-soft:#3A211D;
+--flag:#D9A44C; --flag-soft:#382C15;
+--shadow:rgba(0,0,0,.4);
+}
+}
+:root[data-theme="dark"]{
+--paper:#131917; --surface:#1B2321; --sunk:#232C29;
+--ink:#E6EBE7; --ink-2:#AFBCB6; --ink-3:#84968E; --rule:#2E3A36;
+--accent:#5FC0A6; --accent-soft:#1E3630;
+--human:#8E9AE8; --human-soft:#232847;
+--stamp:#E8705C; --stamp-soft:#3A211D;
+--flag:#D9A44C; --flag-soft:#382C15;
+--shadow:rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+body{
+margin:0; background:var(--paper); color:var(--ink);
+font-family:var(--body); font-size:17px; line-height:1.65;
+-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px 96px}
+.col{max-width:70ch;margin-left:auto;margin-right:auto}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:2px solid var(--ink);margin-bottom:44px;padding:56px 0 18px}
+.mast.kicker{
+font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+color:var(--accent);margin-bottom:18px
+}
+.mast h1{
+font-family:var(--display);font-weight:700;font-size:clamp(38px,6.5vw,68px);
+line-height:.98;letter-spacing:-.025em;margin:0 0 14px;text-wrap:balance
+}
+.mast.sub{font-size:20px;color:var(--ink-2);margin:0 0 24px;max-width:62ch}
+.meta{
+display:flex;flex-wrap:wrap;gap:8px 26px;font-family:var(--mono);
+font-size:11.5px;color:var(--ink-3);padding-bottom:6px
+}
+.meta b{color:var(--ink-2);font-weight:400}
+
+/* ---------- structure ---------- */
+h2{
+font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:-.02em;
+line-height:1.15;margin:64px 0 6px;text-wrap:balance;
+padding-top:22px;border-top:1px solid var(--rule)
+}
+h2.num{
+font-family:var(--mono);font-size:13px;font-weight:400;color:var(--accent);
+display:block;margin-bottom:8px;letter-spacing:.08em
+}
+h3{font-family:var(--display);font-weight:600;font-size:19.5px;letter-spacing:-.01em;margin:34px 0 6px}
+h4{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+color:var(--ink-3);font-weight:700;margin:26px 0 8px}
+p{margin:0 0 14px}
+a{color:var(--accent)}
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin-bottom:7px}
+code{font-family:var(--mono);font-size:.855em;background:var(--sunk);
+padding:.12em.38em;border-radius:3px;word-break:break-word}
+strong{font-weight:600}
+em{font-style:italic;color:var(--ink-2)}
+.lede{font-size:19px;color:var(--ink-2)}
+
+/* ---------- callouts ---------- */
+.rule-card{
+background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--accent);
+padding:18px 22px;margin:22px 0;box-shadow:0 1px 2px var(--shadow)
+}
+.rule-card.warn{border-left-color:var(--flag)}
+.rule-card.stop{border-left-color:var(--stamp)}
+.rule-card.tag{
+font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+color:var(--accent);display:block;margin-bottom:7px;font-weight:700
+}
+.rule-card.warn.tag{color:var(--flag)}
+.rule-card.stop.tag{color:var(--stamp)}
+.rule-card p:last-child{margin-bottom:0}
+
+blockquote{
+margin:18px 0;padding:2px 0 2px 20px;border-left:2px solid var(--rule);
+font-style:italic;color:var(--ink-2)
+}
+blockquote cite{
+display:block;font-style:normal;font-family:var(--mono);font-size:11px;
+color:var(--ink-3);margin-top:8px;letter-spacing:.04em
+}
+
+/* ---------- figures ---------- */
+figure{margin:44px 0;max-width:1120px;margin-left:auto;margin-right:auto}
+.figframe{
+background:var(--surface);border:1px solid var(--rule);
+padding:20px 18px 10px;overflow-x:auto;box-shadow:0 1px 3px var(--shadow)
+}
+.figframe > svg{display:block;width:100%;min-width:660px;height:auto}
+figcaption{
+font-family:var(--mono);font-size:11.5px;line-height:1.6;color:var(--ink-3);
+margin-top:12px;max-width:80ch
+}
+figcaption b{color:var(--ink-2);font-weight:700;letter-spacing:.06em}
+
+/* ---------- code blocks ---------- */
+pre{
+font-family:var(--mono);font-size:12.5px;line-height:1.62;background:var(--surface);
+border:1px solid var(--rule);padding:16px 18px;overflow-x:auto;margin:20px 0;
+color:var(--ink);box-shadow:0 1px 2px var(--shadow)
+}
+pre.c{color:var(--ink-3)}
+pre.k{color:var(--accent);font-weight:700}
+pre.s{color:var(--flag)}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;margin:22px 0}
+tbody tr[id]{scroll-margin-top:24px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{
+font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+color:var(--ink-3);border-bottom:1.5px solid var(--ink-2);font-weight:700
+}
+td code{background:none;padding:0;font-size:12.5px}
+.num-col{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:13px}
+tbody tr:last-child td{border-bottom:none}
+
+.pill{
+display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;
+letter-spacing:.09em;padding:2.5px 7px;border-radius:2px;white-space:nowrap
+}
+.p-halt{background:var(--stamp-soft);color:var(--stamp)}
+.p-flag{background:var(--flag-soft);color:var(--flag)}
+.p-ok{background:var(--accent-soft);color:var(--accent)}
+
+.footnote{
+font-family:var(--mono);font-size:11.5px;color:var(--ink-3);line-height:1.7;
+border-top:1px solid var(--rule);padding-top:18px;margin-top:60px
+}
+
+/* ---------- architecture board (figure 2) ---------- */
+.archlegend{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:var(--mono);font-size:10.5px;
+color:var(--ink-3);margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
+.archlegend span{display:inline-flex;align-items:center;gap:6px}
+.archlegend i{width:9px;height:9px;border-radius:2px;display:inline-block;flex:0 0 auto}
+.band{display:flex;align-items:stretch;min-width:1160px}
+.stage{flex:0 0 194px;background:var(--surface);border:1px solid var(--rule);
+border-top:3px solid var(--fam);padding:11px 12px 10px;display:flex;flex-direction:column;gap:8px}
+.conn{flex:0 0 24px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);flex-shrink:0}
+.conn svg{width:20px;height:14px;min-width:0}
+.s-head{display:flex;align-items:flex-start;gap:7px}
+.s-num{flex:0 0 19px;height:19px;border-radius:50%;background:var(--fam);color:var(--paper);
+font-family:var(--mono);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.s-name{font-family:var(--display);font-weight:600;font-size:14px;line-height:1.2;letter-spacing:-.01em}
+.s-mid{display:flex;align-items:center;gap:9px}
+.s-icon{flex:0 0 auto;color:var(--fam);line-height:0}
+.s-icon svg{width:36px;height:36px;min-width:0}
+.s-kind{font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:2px 6px;border-radius:2px;
+background:var(--fam-soft);color:var(--fam);font-weight:700;white-space:nowrap}
+.s-list{margin:0;padding:0;list-style:none;font-size:11.5px;line-height:1.5;color:var(--ink-2);flex:1}
+.s-list li{padding-left:10px;position:relative;margin-bottom:3px}
+.s-list li::before{content:"";position:absolute;left:0;top:.52em;width:4px;height:4px;border-radius:50%;background:var(--fam)}
+.s-out{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);border-top:1px dashed var(--rule);padding-top:6px;line-height:1.45}
+.forkrow{display:flex;min-width:1160px;margin-top:-1px}
+.forkpad{flex:0 0 436px}
+.forkcol{flex:0 0 194px;display:flex;flex-direction:column;align-items:center}
+.forkstem{width:2px;height:16px;background:var(--rule)}
+.forkarms{width:100%;display:flex;flex-direction:column;gap:6px;padding-top:6px}
+.arm{font-family:var(--mono);font-size:10px;line-height:1.45;padding:6px 8px;border-left:3px solid var(--am);
+background:var(--surface);border-top:1px solid var(--rule);border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);color:var(--ink-2)}
+.arm b{color:var(--am);font-weight:700;display:block;margin-bottom:2px;letter-spacing:.04em}
+.forknote{flex:1;min-width:0;padding:30px 0 0 20px;font-family:var(--hand);font-size:19px;color:var(--accent);line-height:1.3;align-self:flex-start}
+.xcut{display:flex;flex-wrap:wrap;min-width:0;gap:12px 18px;margin-top:20px;padding-top:14px;border-top:1px dashed var(--rule)}
+.xcut > div{flex:1 1 210px;min-width:0;font-size:11.5px;line-height:1.5;color:var(--ink-2)}
+.xcut b{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--accent);margin-bottom:3px}
+@media (max-width:700px){.stage{flex-basis:174px}.band,.forkrow,.xcut{min-width:1080px}.forkpad{flex-basis:396px}.forkcol{flex-basis:174px}}
+
+
+/* ---------- shared diagram-card system (all figures) ---------- */
+.dsec{margin-bottom:20px}
+.dsec:last-child{margin-bottom:0}
+.dcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--ink-3);
+margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.dcap::after{content:"";flex:1;height:1px;background:var(--rule)}
+.dgrid{display:grid;gap:11px}
+.dcard{background:var(--surface);border:1px solid var(--rule);border-top:3px solid var(--fam);
+padding:11px 12px 10px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.dcard.dashed{border:1.5px dashed var(--fam);border-top-width:1.5px;background:transparent}
+.dcard.tint{background:var(--fam-soft);border-color:var(--fam)}
+.dhead{display:flex;align-items:center;gap:8px;min-width:0}
+.dbadge{flex:0 0 auto;min-width:19px;height:19px;padding:0 6px;border-radius:10px;background:var(--fam);
+color:var(--paper);font-family:var(--mono);font-size:10px;font-weight:700;
+display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.dtitle{font-family:var(--display);font-weight:600;font-size:13.5px;line-height:1.2;letter-spacing:-.01em}
+.dchip{font-family:var(--mono);font-size:9px;letter-spacing:.06em;font-weight:700;padding:2px 6px;
+border-radius:2px;background:var(--fam-soft);color:var(--fam);margin-left:auto;white-space:nowrap}
+.dlist{margin:0;padding:0;list-style:none;font-size:11.5px;line-height:1.5;color:var(--ink-2)}
+.dlist li{padding-left:10px;position:relative;margin-bottom:3px}
+.dlist li::before{content:"";position:absolute;left:0;top:.52em;width:4px;height:4px;border-radius:50%;background:var(--fam)}
+.dfoot{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);border-top:1px dashed var(--rule);
+padding-top:6px;line-height:1.45;margin-top:auto}
+.dhand{font-family:var(--hand);font-size:21px;line-height:1.34;color:var(--accent)}
+.dhand.warn{color:var(--stamp)}
+.dhand.mute{color:var(--ink-3)}
+.dflow{display:flex;align-items:stretch;min-width:0}
+.dflow >.dcard{flex:1}
+.darrow{flex:0 0 26px;display:flex;align-items:center;justify-content:center;color:var(--ink-3)}
+.darrow.down{flex:none;height:26px;width:100%}
+.darrow svg{width:20px;height:14px;min-width:0}
+.darrow.down svg{width:14px;height:20px}
+.dbig{font-family:var(--display);font-weight:700;font-size:25px;line-height:1;color:var(--fam)}
+.dmono{font-family:var(--mono);font-size:12.5px;line-height:1.75;color:var(--ink)}
+.dq{background:var(--accent-soft);border-radius:3px;padding:1px 5px}
+
+/* ---------- figure 1: one-liner anatomy ---------- */
+.anat{display:grid;gap:8px}
+.anat-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,290px);gap:12px;align-items:center}
+.anat-line{font-family:var(--mono);font-size:13px;background:var(--fam-soft);border-left:3px solid var(--fam);
+padding:9px 12px;display:block;overflow-x:auto;white-space:nowrap}
+.anat-line.ind{margin-left:26px}
+.anat-src{font-family:var(--mono);font-size:10px;line-height:1.5;color:var(--ink-3);
+border-left:1px dashed var(--rule);padding-left:11px}
+.anat-src b{display:block;color:var(--fam);font-size:11px;margin-bottom:2px;letter-spacing:.03em}
+
+/* ---------- figure 5: branching questionnaire ---------- */
+.branch{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.blabel{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--fam);
+background:var(--fam-soft);padding:3px 9px;border-radius:3px;display:inline-block;margin-bottom:9px}
+
+/* ---------- figure 6: the ruling bubble ---------- */
+.bubble{position:relative;background:var(--surface);border:2px solid var(--accent);border-radius:12px;
+padding:15px 18px;font-family:var(--hand);font-size:23px;line-height:1.3;color:var(--accent)}
+.bubble::after{content:"";position:absolute;left:26px;bottom:-13px;width:0;height:0;
+border:11px solid transparent;border-top-color:var(--accent);border-bottom:0}
+
+/* ---------- table of contents ---------- */
+.toc{background:var(--surface);border:1px solid var(--rule);padding:20px 22px;margin:0 0 8px}
+.toc h2{all:unset;display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:14px}
+.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px 26px;
+grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.toc a{display:flex;gap:9px;align-items:baseline;text-decoration:none;color:var(--ink);
+padding:4px 6px;border-radius:3px;font-size:14.5px}
+.toc a:hover{background:var(--sunk)}
+.toc a i{font-family:var(--mono);font-size:11px;color:var(--accent);font-style:normal;flex:0 0 26px}
+.toc a span{min-width:0}
+.toc a em{font-style:normal;color:var(--ink-3);font-family:var(--mono);font-size:9.5px;margin-left:auto;flex:0 0 auto;white-space:nowrap;align-self:center}
+h2[id]{scroll-margin-top:16px}
+
+::selection{background:var(--accent-soft);color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+@media (max-width:640px){
+body{font-size:16px}
+.wrap{padding:0 18px 72px}
+h2{font-size:25px}
+}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+<div class="kicker">PriorMD · System design · the engine</div>
+<h1>Turning a referral packet into<br>a submittable authorization</h1>
+<p class="sub">Starts with what this work actually is, then the layer contracts, the data model and the calculation model. Scope is the <strong>engine</strong> — deployment, multi-tenancy and portal integration are out; those five open assumptions are in §9.</p>
+<div class="meta">
+<span><b>Version</b> draft 1</span>
+<span><b>Date</b> 2026-08-25</span>
+<span><b>Baseline</b> 40/40 tests · 8 evals green</span>
+<span><b>Board</b> the 20 blocks in S1</span>
+<span><b>Authority</b> the SME's 12 rules + Q1–Q8</span>
+</div>
+</header>
+
+<div class="col">
+
+<nav class="toc"><h2>Thirteen sections</h2><ol><li><a href="#s0"><i>§0</i><span>Background: what this project is solving</span><em>context</em></a></li><li><a href="#s1"><i>§1</i><span>Six things that cannot move</span><em>principles</em></a></li><li><a href="#s2"><i>§2</i><span>System overview</span><em>architecture</em></a></li><li><a href="#s3"><i>§3</i><span>The core type: values that carry their evidence</span><em>data</em></a></li><li><a href="#s4"><i>§4</i><span>Calculation: the schedule as an intermediate representation</span><em>algorithm</em></a></li><li><a href="#s5"><i>§5</i><span>Layer ④: closing the candidate set</span><em>algorithm</em></a></li><li><a href="#s6"><i>§6</i><span>The CMM questionnaire: a hole in the architecture</span><em>gap</em></a></li><li><a href="#s7"><i>§7</i><span>Layer ⑤: findings, not booleans</span><em>algorithm</em></a></li><li><a href="#s8"><i>§8</i><span>Eval architecture, and a problem that must be solved now</span><em>method</em></a></li><li><a href="#s9"><i>§9</i><span>Explicit assumptions: five blanks outside the engine</span><em>unknowns</em></a></li><li><a href="#s10"><i>§10</i><span>Trade-offs on the record</span><em>trade-offs</em></a></li><li><a href="#s11"><i>§11</i><span>When to come back and change this document</span><em>upkeep</em></a></li><li><a href="#s12"><i>§12</i><span>Appendix · Glossary</span><em>appendix</em></a></li></ol></nav>
+
+<h2 id="s0"><span class="num">§ 0</span>Background: what this project is solving</h2>
+
+<p class="lede">If this is your first read, this section is the three minutes that make the rest of the document make sense. Unfamiliar with the vocabulary? The glossary is §12, at the end. Only here for the design? Keep going.</p>
+
+<h3>A real situation</h3>
+
+<p>A patient goes home from hospital, but the infection is not finished and they need intravenous antibiotics every day. The drug is expensive. Before the insurer pays, it wants one thing: <strong>proof that this is medically necessary, stated in our format</strong>.</p>
+
+<p>That proof is called <strong>prior authorization</strong> (<code>PA</code>). The person who produces it is a licensed <strong>PA Specialist</strong> — the <strong>SME (Subject Matter Expert)</strong> of this project. Every abbreviation in this document is in the quick-reference at the top of §12. She receives a stack of referral material — the physician's order, clinical notes, culture and sensitivity results — and has to produce three things from it:</p>
+
+<ul>
+<li>A <strong>PA one-liner</strong> — drug, strength, frequency, total vials, billing codes and units, start and end dates, all in the wording the payer accepts</li>
+<li>Answers to the payer's questionnaire (<strong>CMM</strong>, CoverMyMeds, the portal most submissions go through) — mostly Yes/No, but <strong>nearly half the questions are deliberately left blank</strong>, because the questionnaire is a branching tree. This is more involved than it sounds; §6 is about it.</li>
+<li><strong>The diagnosis code</strong> — the one that decides approval</li>
+</ul>
+
+<p>Then she submits and waits. Approved, the patient gets the drug. Denied, the patient waits, or pays, or appeals and waits several more weeks.</p>
+
+<h3>Five words of domain vocabulary</h3>
+
+<div class="tw">
+<table>
+<thead><tr><th>Term</th><th>What it is</th><th>An example</th></tr></thead>
+<tbody>
+<tr><td><strong>ICD-10</strong><br><span style="font-size:11px;color:var(--ink-3)">International Classification of Diseases</span></td><td>The diagnosis code. <strong>The most judgment-heavy item in the job</strong> — get it wrong and the request is denied</td><td><code>T81.49XA</code> = post-operative surgical site infection, depth unspecified</td></tr>
+<tr><td><strong>J-code</strong><br><span style="font-size:12px;color:var(--ink-3)">(HCPCS)</span></td><td>The billing code for an injectable drug. Each code carries a fixed "unit" dose</td><td><code>J0692</code> = cefepime per 500mg, so one 2g dose = <strong>4 units</strong></td></tr>
+<tr><td><strong>day supply</strong></td><td>The calendar length of the course. <strong>Both ends count</strong></td><td>07/24 to 09/03 = <strong>42 days</strong>, not 41</td></tr>
+<tr><td><strong>Part B / D</strong></td><td>The two Medicare benefits that matter here. Which one a drug falls under depends on how it is given</td><td>Given through an external infusion pump (which is DME) → usually <strong>Part B</strong>, and Part D will deny it</td></tr>
+<tr><td><strong>CMM</strong><br><span style="font-size:11px;color:var(--ink-3)">CoverMyMeds</span></td><td>The payer's coverage-determination questionnaire, and the portal it lives in</td><td>The 21 CMM PDFs in the case library are exactly what she submitted</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>What the work looks like</h3>
+
+<p>Below is a real one-liner in structure (the numbers are from the project's case-001, de-identified). <strong>Take it apart and the whole architecture explains itself</strong>:</p>
+
+</div>
+
+<figure>
+<div class="figframe">
+
+<div class="archlegend">
+<span><i style="background:var(--flag)"></i>① Extraction — read out of the documents</span>
+<span><i style="background:var(--accent)"></i>③ Calculation — computed by code</span>
+<span><i style="background:var(--stamp)"></i>④ Judgment — not built, so left blank</span>
+<span style="margin-left:auto">Numbers from case-001 (de-identified); every one is recomputable</span>
+</div>
+
+<div class="dsec">
+<div class="dcap">PA one-liner · the line that gets submitted to the payer</div>
+<div class="anat">
+
+<div class="anat-row" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<code class="anat-line">SOC 07/24/2026 – 09/03/2026 (42 days)</code>
+<div class="anat-src"><b>③ calculation · code</b>both ends count (inclusive)<br>7/24→9/3 = <b style="display:inline">42</b> days, not 41</div>
+</div>
+
+<div class="anat-row" style="--fam:var(--flag);--fam-soft:var(--flag-soft)">
+<code class="anat-line">Cefepime 2g vial IV q12h</code>
+<div class="anat-src"><b>① extraction · LLM</b>drug / strength / route / frequency<br>each one must carry a source_quote</div>
+</div>
+
+<div class="anat-row" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<code class="anat-line ind">Total Qty: 84 vials · J0692 ×336</code>
+<div class="anat-src"><b>③ calculation · code</b>2 doses/day × 42 days = 84 doses<br>2000mg ÷ 500mg = 4 units/dose → 336</div>
+</div>
+
+<div class="anat-row" style="--fam:var(--flag);--fam-soft:var(--flag-soft)">
+<code class="anat-line">Daptomycin 500mg vial IV q24h</code>
+<div class="anat-src"><b>① extraction · LLM</b>the 335mg dose is quoted from the order too<br>not derived from body weight</div>
+</div>
+
+<div class="anat-row" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<code class="anat-line ind">Total Qty: 42 vials · J0878 ×14,070</code>
+<div class="anat-src"><b>③ calculation · code</b>ceil(335 ÷ 500) = 1 vial/dose<br>165mg discarded per dose → raises a flag</div>
+</div>
+
+<div class="anat-row" style="--fam:var(--stamp);--fam-soft:var(--stamp-soft)">
+<code class="anat-line">Dx: ______________</code>
+<div class="anat-src"><b>④ judgment · not built</b>never guess → left blank for the specialist<br>this box decides approval</div>
+</div>
+
+</div>
+</div>
+
+<div class="dsec">
+<div class="dcap">What the rules forbid on this line</div>
+<div class="dgrid" style="grid-template-columns:repeat(auto-fit,minmax(224px,1fr))">
+<div class="dcard dashed" style="--fam:var(--stamp);--fam-soft:var(--stamp-soft)">
+<div class="dhead"><span class="dbadge">✕</span><span class="dtitle">99601 / 99602</span></div>
+<ul class="dlist"><li>Nursing visit codes (CPT)</li><li>Removed from AI scope by the SME, 2026-08-03</li></ul>
+<div class="dfoot">Held in place by one test and two eval bans</div>
+</div>
+<div class="dcard dashed" style="--fam:var(--stamp);--fam-soft:var(--stamp-soft)">
+<div class="dhead"><span class="dbadge">✕</span><span class="dtitle">S9500 / S9501 / S9502</span></div>
+<ul class="dlist"><li>Per-diem codes for home infusion services</li><li>Only appear on a medical-benefit authorization</li></ul>
+<div class="dfoot">A medication-only or CMM submission should carry none</div>
+</div>
+<div class="dcard dashed" style="--fam:var(--stamp);--fam-soft:var(--stamp-soft)">
+<div class="dhead"><span class="dbadge">✕</span><span class="dtitle">An inferred ICD code</span></div>
+<ul class="dlist"><li>Not in the chart = not written</li><li>This is exactly where experiment #1 crashed</li></ul>
+<div class="dfoot">Leave it blank rather than fill in something plausible</div>
+</div>
+</div>
+</div>
+
+<div class="xcut">
+<div style="flex:1.4"><b>Four things, three of them arithmetic</b>Dates, vial counts, billing units — all derivable from the order by code, and the same input always gives the same output.</div>
+<div style="flex:1.4"><b>The fourth one is what decides approval</b>The diagnosis code. It is empty right now, because layer ④ does not exist and the project would rather leave a gap than guess.</div>
+<div style="flex:1.2"><b>So the architecture looks like this</b>Maths sinks into code, judgment is pulled up and constrained. That is not a preference — it is reverse-engineered from this one line.</div>
+</div>
+
+</div>
+<figcaption><b>Figure 1 ·</b> A one-liner taken apart, which is also where the architecture comes from. <b>Yellow</b> was read out of the documents, <b>green</b> was computed by code, <b>red</b> is judgment — and the judgment box is currently empty. The dashed panel holds the three things the rules forbid on this line; the nursing-code ban came from one verbal ruling by the SME and is now held in place by a test and two eval assertions.</figcaption>
+</figure>
+
+<div class="col">
+
+<h3>Why it is worth automating, and why it is dangerous</h3>
+
+<p>Look at the figure again: <strong>three of the four outputs are pure arithmetic</strong> — counting a calendar, multiplying doses, rounding up, converting billing units. That part is mechanical, repetitive, easy to get wrong when tired, and done many times a day. That is the case for automating it.</p>
+
+<div class="rule-card stop">
+<span class="tag">Where the danger is</span>
+<p>The remaining one — the diagnosis code — decides approval. And an LLM (Large Language Model) happens to be <strong>extremely good at producing an ICD code that sounds entirely reasonable</strong>, and equally good at filling in a blank when the information is thin.</p>
+<p>This is not hypothetical. In experiment #1 on 2026-07-30, a model given every rule got the arithmetic <strong>completely right</strong> and reproduced the hardest judgment <strong>correctly</strong>. But it wrote in <code>T81.42XA</code> (deep incisional) — when the chart <strong>never stated a depth at all</strong>. It also answered "Yes" to the generic-substitution question, reasoning it out <em>by inference</em>. About 85% overall — and the wrong 15% sat squarely on the most expensive part.</p>
+</div>
+
+<p>This whole design document is, at bottom, an answer to one question: <strong>how do you get something that fills in blanks to work somewhere blanks must not be filled in.</strong></p>
+
+<h3>How the project got here</h3>
+
+<div class="tw">
+<table>
+<thead><tr><th>Date</th><th>What happened</th><th>What it taught</th></tr></thead>
+<tbody>
+<tr><td class="num-col">07-30</td><td>Wrote the SME's 12 rules as a system prompt and ran experiment #1 on a de-identified real case</td><td>The model can do the arithmetic, and it will also fill in blanks. <strong>A prompt alone is not enough</strong></td></tr>
+<tr><td class="num-col">07-30</td><td>Built the calculation layer (<code>pa_calc.py</code>), the zero-trust validator (<code>pipeline.py</code>) and the five-dimension eval harness</td><td>Maths stops being wrong once it lives in code; fabrication and an honest "I don't know" must be handled differently</td></tr>
+<tr><td class="num-col">08-03</td><td>One iMessage from the SME: nursing codes out of AI scope; the tool is mainly medication adjudication</td><td>A ruling lands as <strong>four things</strong>: a code change, a test, an eval assertion, and a dated verbatim quote</td></tr>
+<tr><td class="num-col">08-25</td><td>The SME delivered complete Q1–Q8 answers plus 21 cases with real outcomes</td><td>What she gave are <strong>decidable rules and counter-examples</strong>, not anecdotes — enough to build layer ④</td></tr>
+<tr><td class="num-col">now</td><td>This document: turning those eight answers into the engine's design</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Who decides what</h3>
+
+<ul>
+<li><strong>SME</strong> — the domain authority. Her rulings <strong>override</strong> the source document; where they conflict, the later word is hers. She does not write code, but everything she says has to become a test.</li>
+<li><strong>Edison</strong> — builds the system. Engineering judgment is his. Domain judgment is not.</li>
+<li><strong>The reviewing specialist (possibly the SME herself, possibly someone else)</strong> — reviews every output before it is submitted. This is not a temporary safety measure, it is <strong>the shape of the product</strong>.</li>
+</ul>
+
+<blockquote>
+The goal is not to make every case look approvable. The goal is to find exactly where a payer is likely to challenge it — while there is still time to fix it.
+<cite>SME · Q6 · this line works as a one-sentence definition of the product</cite>
+</blockquote>
+
+<h2 id="s1"><span class="num">§ 1</span>Six things that cannot move</h2>
+
+<p class="lede">These are not preferences. They are the reasons the system has the shape it has. (<strong>SME</strong> = Subject Matter Expert — in this project, the PA specialist. She appears constantly from here on.) Any refactor has to leave all six intact.</p>
+
+<ol>
+<li><strong>Deterministic work in code, judgment work in constrained LLM calls.</strong> From experiment #1: the model's arithmetic was perfect, but it reasoned its way into specificity the chart never stated. So the maths sank and the judgment was pulled up and constrained.</li>
+<li><strong>Zero trust: the LLM's output is testimony, not fact.</strong> Fabrication halts the pipeline; an honest "I don't know" passes with a warning. The difference between those two is the pivot the whole design turns on.</li>
+<li><strong>A fixed pipeline, not a free agent.</strong> In a medical workflow, auditability is a feature, not overhead.</li>
+<li><strong>Never guess.</strong> An unknown drug, an unknown frequency, a code that never appears in the documents → flag it, do not generate it.</li>
+<li><strong>Every SME-approved case becomes a permanent eval.</strong> Every change has to keep them all green.</li>
+<li><strong>The specialist reviews everything. Full autonomy is an explicit non-goal.</strong></li>
+</ol>
+
+<div class="rule-card">
+<span class="tag">Where this document stands</span>
+<p>For every decision below I tried to make the property <strong>enforced by a type or a structure</strong> rather than requested in a sentence of prompt. Anything held together by "the model should remember not to…" will fail on some case.</p>
+</div>
+
+<h2 id="s2"><span class="num">§ 2</span>System overview</h2>
+
+<p>Seven stations, one direction. The only fork is at station ②, and that fork is the pivot of the whole design.</p>
+
+</div>
+
+<figure>
+<div class="figframe">
+
+<div class="archlegend">
+<span><i style="background:var(--ink-3)"></i>input / human</span>
+<span><i style="background:var(--flag)"></i>a constrained LLM call — it fills in blanks, so every output must carry evidence</span>
+<span><i style="background:var(--accent)"></i>pure code — the same input always gives the same output</span>
+<span><i style="background:var(--stamp)"></i>the halt fork</span>
+<span style="margin-left:auto">Status: ③ ⑤ partly built · ④ not built · CMM answering not built (§6)</span>
+</div>
+
+<div class="band">
+
+<div class="stage" style="--fam:var(--ink-3);--fam-soft:var(--sunk)">
+<div class="s-head"><span class="s-num">0</span><span class="s-name">Referral packet</span></div>
+<div class="s-mid">
+<span class="s-icon"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="7" width="22" height="28" rx="2" transform="rotate(-5 16 21)"/><rect x="10" y="5" width="22" height="28" rx="2"/><path d="M15 12h12M15 18h10M15 24h12"/></svg></span>
+<span class="s-kind">input</span>
+</div>
+<ul class="s-list">
+<li>Physician order and signed prescription</li>
+<li>Clinical notes, culture and sensitivity</li>
+<li>Mostly PDFs, some of them scans</li>
+</ul>
+<div class="s-out">→ <code>Document[]</code><br>read-only, never modified</div>
+</div>
+
+<div class="conn"><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 7h15M12 3l4 4-4 4"/></svg></div>
+
+<div class="stage" style="--fam:var(--flag);--fam-soft:var(--flag-soft)">
+<div class="s-head"><span class="s-num">1</span><span class="s-name">Extraction</span></div>
+<div class="s-mid">
+<span class="s-icon"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="8" y="12" width="24" height="21" rx="5"/><path d="M20 12V7"/><circle cx="20" cy="5" r="2"/><circle cx="15.5" cy="21" r="2"/><circle cx="24.5" cy="21" r="2"/><path d="M15 27q5 4 10 0"/></svg></span>
+<span class="s-kind">LLM</span>
+</div>
+<ul class="s-list">
+<li>Fills JSON only, calculates nothing</li>
+<li>Every field must carry a <code>source_quote</code></li>
+<li>Unsure → write <code>Missing</code>, never infer</li>
+<li>Frequency must come from the whitelist</li>
+</ul>
+<div class="s-out">→ <code>Extraction</code><br>every field is a <code>Sourced[T]</code></div>
+</div>
+
+<div class="conn"><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 7h15M12 3l4 4-4 4"/></svg></div>
+
+<div class="stage" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="s-head"><span class="s-num">2</span><span class="s-name">Zero-trust validation</span></div>
+<div class="s-mid">
+<span class="s-icon"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 5l13 4.5v12Q33 32 20 36Q7 32 7 21.5v-12z"/><path d="M14 20l4.5 4.5L27 15"/></svg></span>
+<span class="s-kind">code</span>
+</div>
+<ul class="s-list">
+<li>The pipeline's only fork</li>
+<li>Fabrication → hard error, <b>halt</b></li>
+<li>An honest null → pass with a warning</li>
+<li>That distinction is its reason for existing</li>
+</ul>
+<div class="s-out">→ <code>Verdict</code><br><code>halt</code> | <code>pass_with_warnings</code></div>
+</div>
+
+<div class="conn"><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 7h15M12 3l4 4-4 4"/></svg></div>
+
+<div class="stage" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="s-head"><span class="s-num">3</span><span class="s-name">Calculation</span></div>
+<div class="s-mid">
+<span class="s-icon"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="8" y="5" width="24" height="30" rx="3"/><rect x="12" y="9" width="16" height="6" rx="1"/><rect x="12" y="19" width="4.5" height="4" rx="1"/><rect x="17.8" y="19" width="4.5" height="4" rx="1"/><rect x="23.5" y="19" width="4.5" height="4" rx="1"/><rect x="12" y="26" width="4.5" height="4" rx="1"/><rect x="17.8" y="26" width="4.5" height="4" rx="1"/><rect x="23.5" y="26" width="4.5" height="4" rx="1"/></svg></span>
+<span class="s-kind">code</span>
+</div>
+<ul class="s-list">
+<li>Expand the <code>Regimen</code> into a schedule first</li>
+<li>day supply and dose count computed separately</li>
+<li>vials and J-code units each on their own</li>
+<li>Unknown drug or frequency → flag, no guess</li>
+</ul>
+<div class="s-out">→ <code>Calculation</code><br>pure function, replayable</div>
+</div>
+
+<div class="conn"><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 7h15M12 3l4 4-4 4"/></svg></div>
+
+<div class="stage" style="--fam:var(--flag);--fam-soft:var(--flag-soft)">
+<div class="s-head"><span class="s-num">4</span><span class="s-name">Judgment</span></div>
+<div class="s-mid">
+<span class="s-icon"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3v8l4-2 4 2V3z"/><rect x="8" y="14" width="24" height="21" rx="5"/><circle cx="15.5" cy="23" r="2"/><circle cx="24.5" cy="23" r="2"/><path d="M15 29h10"/></svg></span>
+<span class="s-kind">LLM · not built</span>
+</div>
+<ul class="s-list">
+<li>ICD route selection + CMM answering</li>
+<li>The candidate set is closed and built by code from the chart</li>
+<li>Picks only, never generates</li>
+<li>Must also output its <b>rejection reasons</b></li>
+</ul>
+<div class="s-out">→ <code>Judgment</code> · <code>Answer[]</code><br>every conclusion points back to the chart</div>
+</div>
+
+<div class="conn"><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 7h15M12 3l4 4-4 4"/></svg></div>
+
+<div class="stage" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="s-head"><span class="s-num">5</span><span class="s-name">Preflight</span></div>
+<div class="s-mid">
+<span class="s-icon"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="8" y="6" width="24" height="29" rx="3"/><rect x="15" y="3" width="10" height="5" rx="2"/><path d="M13 15l2.5 2.5L20 13M13 23l2.5 2.5L20 21M13 31l2.5 2.5L20 29"/><path d="M23 16h6M23 24h6M23 32h6"/></svg></span>
+<span class="s-kind">code</span>
+</div>
+<ul class="s-list">
+<li>Q6's five denial reasons, as five checks</li>
+<li>Order-to-documentation comparison</li>
+<li>Part B vs Part D benefit-routing warning</li>
+<li>Produces Findings, not booleans</li>
+</ul>
+<div class="s-out">→ <code>Finding[]</code><br><code>HALT｜BLOCK｜FLAG｜NOTE</code></div>
+</div>
+
+<div class="conn"><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 7h15M12 3l4 4-4 4"/></svg></div>
+
+<div class="stage" style="--fam:var(--human);--fam-soft:var(--human-soft)">
+<div class="s-head"><span class="s-num">6</span><span class="s-name">Specialist review</span></div>
+<div class="s-mid">
+<span class="s-icon"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="20" cy="13" r="7"/><path d="M7 35q0-11 13-11t13 11"/></svg></span>
+<span class="s-kind">human · mandatory</span>
+</div>
+<ul class="s-list">
+<li>Approved or corrected item by item, then submitted</li>
+<li>The diagnosis code is her call</li>
+<li>Her corrections are the training signal for later calibration</li>
+</ul>
+<div class="s-out">→ submitted to the payer<br>full autonomy is an explicit non-goal</div>
+</div>
+
+</div>
+
+<div class="forkrow">
+<div class="forkpad"></div>
+<div class="forkcol">
+<div class="forkstem"></div>
+<div class="forkarms">
+<div class="arm" style="--am:var(--stamp)"><b>HALT</b>missing source_quote · missing start date · non-whitelisted frequency · any fabricated value</div>
+<div class="arm" style="--am:var(--flag)"><b>PASS + WARN</b>An honest <code>Missing</code>: the model said "I don't know", which is correct behaviour</div>
+</div>
+</div>
+<div class="forknote">One empty field, handled two<br>opposite ways depending on<br>where it came from — that is<br>the system's pivot, not a switch</div>
+</div>
+
+<div class="xcut">
+<div><b>Append only</b>Each layer only adds to the Case. ③ never revises ②'s verdict, ④ never recomputes ③'s numbers.</div>
+<div><b>Replayable</b>Any worksheet can be rerun end to end from <code>Document[]</code>, and a failure can be pinned to a layer.</div>
+<div><b>Evidence chain</b>Every value carries a quote, every conclusion a citation, every Finding a "what would fix this".</div>
+<div><b>Fixed pipeline</b>Not a free agent. It stops on a situation nobody designed for, rather than improvising.</div>
+</div>
+
+</div>
+<figcaption><b>Figure 2 ·</b> Seven stations, one direction, and a single fork at station ②. <b>Colour is trust level</b>: green is pure code (same input, same output, always); yellow is an LLM call that fills in blanks and therefore must carry evidence; purple is the human who cannot be removed. Station ④ does not exist at all — it owes both ICD judgment and CMM answering (§5, §6).</figcaption>
+</figure>
+
+<div class="col">
+
+<h2 id="s3"><span class="num">§ 3</span>The core type: values that carry their evidence</h2>
+
+<p>The single most important type in the system is this one:</p>
+
+<pre><span class="c"># an extracted value is never a bare scalar</span>
+<span class="k">type</span> Sourced[T] = Known[T] | Missing
+
+<span class="k">@dataclass</span>
+<span class="k">class</span> Known[T]:
+value: T
+quote: str <span class="c"># verbatim; must be findable in the source document</span>
+doc: DocId <span class="c"># which document</span>
+span: tuple[int,int] | None
+
+<span class="k">@dataclass</span>
+<span class="k">class</span> Missing:
+reason: <span class="s">"not_documented"</span> | <span class="s">"unclear"</span> | <span class="s">"conflicting"</span>
+note: str <span class="c"># what the model saw that made it say so</span>
+</pre>
+
+<div class="rule-card">
+<span class="tag">Decision D-1 · evidence travels with the value</span>
+<p>Rather than a "citations table" sitting alongside the JSON, the quote goes <strong>inside the value itself</strong>. The reason: any downstream code that wants to read the value must first confront where it came from. The rule "do not infer" stops being a line of prompt and becomes a type constraint — <code>Missing</code> has no <code>.value</code> to read, so forgetting to handle it is a crash, not a silent zero.</p>
+<p><strong>The cost:</strong> roughly 3x the JSON, and a longer extraction prompt.<strong>Worth it, because</strong> in experiment #1 the model answered "Yes" precisely by inference — and that failure is completely invisible in flat JSON.</p>
+</div>
+
+<h4>What a whole Case looks like</h4>
+
+<pre>Case
+├─ documents: Document[] <span class="c"># the originals: read-only, never modified</span>
+├─ extraction: Extraction <span class="c"># ① everything is Sourced[...]</span>
+├─ validation: Verdict <span class="c"># ② halt | pass_with_warnings</span>
+├─ calculation: Calculation <span class="c"># ③ pure function, replayable</span>
+├─ judgment: Judgment | None <span class="c"># ④ None = not built / skipped</span>
+├─ findings: Finding[] <span class="c"># ⑤ preflight results</span>
+└─ worksheet: Worksheet <span class="c"># what the specialist actually reads</span>
+</pre>
+
+<p>Every layer <strong>appends and never revises</strong>: ③ does not go back and change ②'s verdict, ④ does not recompute ③'s numbers. That is what makes any worksheet fully replayable from <code>documents</code>, and what lets a failure be pinned to one step of one layer.</p>
+
+<h2 id="s4"><span class="num">§ 4</span>Calculation: the schedule as an intermediate representation</h2>
+
+<p>The code today reads <code>total_doses = per_day × days</code>. The SME rejected that outright in Q8:</p>
+
+<blockquote>
+never estimate unusual frequencies using a generic daily multiplier. Build the administration schedule from the SOC date forward, count each actual dose that falls within the treatment period.
+<cite>SME · Q8 · 2026-08-11</cite>
+</blockquote>
+
+<p>The fix is not a few more entries in the frequency table. It is <strong>a different intermediate representation</strong>.</p>
+
+<pre><span class="k">@dataclass</span>
+<span class="k">class</span> Phase:
+dose_mg: float
+frequency: Frequency <span class="c"># q24h q12h q8h q6h q48h weekly once</span>
+duration: Days(n) | Doses(n)
+
+<span class="k">@dataclass</span>
+<span class="k">class</span> Regimen:
+start: date
+phases: list[Phase] <span class="c"># loading + maintenance = 2 phases; a taper = 3</span>
+
+<span class="k">def</span> schedule(r: Regimen) -&gt; list[Administration]:
+<span class="c">"""Built forward from the SOC date, one entry per dose. The only place in the system that produces a dose count."""</span>
+</pre>
+
+<p>Every number after this is a <strong>fold</strong> over that schedule — except <code>day_supply</code>, which is not:</p>
+
+<div class="rule-card warn">
+<span class="tag">A spec error found while implementing · 2026-08-26</span>
+<p>This document originally defined <code>day_supply</code> as "last dose date − start date + 1". <strong>That is wrong.</strong> Her Q8 answer says <em>the day supply remains 10 days because that is the length of the treatment period</em> — a q48h course over 10 days has its last dose on day 9, and the day supply is still <strong>10</strong>, not 9.</p>
+<p>So day supply comes from <strong>the treatment length the order states</strong> (the sum of the phases' days); only dose count comes from the schedule. The two numbers not only need not match — they do not even have the same source<strong></strong>. Implemented that way in <code>calculate_regimen_case()</code> and held in place by tests.</p>
+</div>
+
+<pre><span class="c"># day supply comes from the ordered treatment length, not the last dose date</span>
+<span class="c"># q48h for 10 days: last dose on day 9, day supply is still 10</span>
+day_supply = sum(p.days <span class="k">for</span> p <span class="k">in</span> r.phases)
+dose_count = len(admins)
+vials = sum(ceil(a.dose_mg / vial_mg)<span class="k">for</span> a <span class="k">in</span> admins)
+jcode_units = sum(ceil(a.dose_mg / unit_mg)<span class="k">for</span> a <span class="k">in</span> admins)
+</pre>
+
+</div>
+
+<figure>
+<div class="figframe">
+
+<div class="archlegend">
+<span><i style="background:var(--accent)"></i>one dose = one pill mark · built forward from the SOC date</span>
+<span style="margin-left:auto">Example: a three-step taper, q8h x5d → q12h x5d → q24h x5d</span>
+</div>
+
+<div class="dsec" style="min-width:980px">
+<div class="dcap">① Regimen · the order split into phases</div>
+<div class="dflow" style="gap:10px">
+<div class="dcard" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="dhead"><span class="dbadge">P1</span><span class="dtitle">500mg q8h</span><span class="dchip">5 days</span></div>
+<div class="dfoot">3 doses/day x 5 = 15 doses</div>
+</div>
+<div class="dcard" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="dhead"><span class="dbadge">P2</span><span class="dtitle">500mg q12h</span><span class="dchip">5 days</span></div>
+<div class="dfoot">2 doses/day x 5 = 10 doses</div>
+</div>
+<div class="dcard" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="dhead"><span class="dbadge">P3</span><span class="dtitle">500mg q24h</span><span class="dchip">5 days</span></div>
+<div class="dfoot">1 dose/day x 5 = 5 doses</div>
+</div>
+</div>
+<div class="darrow down" style="height:26px;color:var(--accent)">
+<svg viewBox="0 0 14 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 1v14M3 12l4 4 4-4"/></svg>
+</div>
+</div>
+
+<div class="dsec" style="min-width:980px">
+<div class="dcap">② schedule() · <strong>the only place a dose count is produced</strong></div>
+<div class="dcard" style="--fam:var(--accent);--fam-soft:var(--accent-soft);padding:14px 14px 10px">
+<svg viewBox="0 0 990 108" role="img" aria-label="A fifteen-day administration schedule: three doses a day for the first five days, two a day for the next five, one a day for the last five — thirty doses in total."><g><rect x="0" y="0" width="330" height="4" fill="var(--accent)" opacity=".55"/><rect x="330" y="0" width="330" height="4" fill="var(--accent)" opacity=".35"/><rect x="660" y="0" width="330" height="4" fill="var(--accent)" opacity=".2"/></g><g transform="translate(0,6)"><rect x="0" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="66" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="132" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="198" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="264" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="330" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="396" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="462" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="528" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="594" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="660" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="726" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="792" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="858" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="924" y="0" width="66" height="108" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="18" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="18" y="34" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="18" y="52" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="84" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="84" y="34" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="84" y="52" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="150" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="150" y="34" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="150" y="52" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="216" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="216" y="34" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="216" y="52" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="282" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="282" y="34" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="282" y="52" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="348" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="348" y="34" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="414" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="414" y="34" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="480" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="480" y="34" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="546" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="546" y="34" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="612" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="612" y="34" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="678" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="744" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="810" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="876" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><rect x="942" y="16" width="30" height="10" rx="5" fill="var(--accent)"/><text x="33" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d1</text><text x="99" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d2</text><text x="165" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d3</text><text x="231" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d4</text><text x="297" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d5</text><text x="363" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d6</text><text x="429" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d7</text><text x="495" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d8</text><text x="561" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d9</text><text x="627" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d10</text><text x="693" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d11</text><text x="759" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d12</text><text x="825" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d13</text><text x="891" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d14</text><text x="957" y="96" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--ink-3)">d15</text></g></svg>
+<div class="dfoot" style="margin-top:10px">
+<code>Administration[]</code> — one entry per dose, each with a date. Every number after this is a <strong>fold</strong>.
+</div>
+</div>
+<div class="darrow down" style="height:26px"><svg viewBox="0 0 14 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 1v14M3 12l4 4 4-4"/></svg></div>
+</div>
+
+<div class="dsec" style="min-width:980px">
+<div class="dcap">③ Four independent folds</div>
+<div class="dgrid" style="grid-template-columns:repeat(4,1fr)">
+<div class="dcard" style="--fam:var(--ink-3);--fam-soft:var(--sunk)">
+<div class="dhead"><span class="dtitle">day supply</span></div>
+<div class="dbig" style="--fam:var(--ink)">15</div>
+<div class="dfoot">last dose date − start date + 1<br>calendar length</div>
+</div>
+<div class="dcard" style="--fam:var(--ink-3);--fam-soft:var(--sunk)">
+<div class="dhead"><span class="dtitle">dose count</span></div>
+<div class="dbig" style="--fam:var(--ink)">30</div>
+<div class="dfoot"><code>len(admins)</code><br>number of administrations</div>
+</div>
+<div class="dcard tint" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="dhead"><span class="dtitle">vials</span></div>
+<div class="dbig">Σ ceil</div>
+<div class="dfoot" style="border-color:var(--accent)"><code>ceil(dose ÷ vial size)</code> summed per dose</div>
+</div>
+<div class="dcard tint" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="dhead"><span class="dtitle">J-code units</span></div>
+<div class="dbig">Σ ceil</div>
+<div class="dfoot" style="border-color:var(--accent)"><code>ceil(dose ÷ unit mg)</code> summed per dose</div>
+</div>
+</div>
+</div>
+
+<div class="xcut">
+<div style="flex:1.3"><b>15 ≠ 30</b>Day supply is calendar length; dose count is how many administrations happen. Once a schedule goes sparse (q48h, weekly) the two <strong>routinely</strong> are unequal — treating them as one number is the root of that whole class of Q8 bugs.</div>
+<div style="flex:1.3"><b>Ceil per dose, then sum</b>Not the whole course added up and divided at the end. Her counter-example: 700mg from 500mg single-dose vials for 30 days is <strong>60 vials</strong>, not 42.</div>
+<div style="flex:1.1"><b>Vials ≠ billing units</b>Two independent calculations with different divisors. One 2g dose is 1 vial, but 4 J0692 units.</div>
+<div style="flex:1.3"><b>Why this is enough</b>q48h, weekly, loading plus maintenance, tapers — all four shapes <strong>need no special-case branch of their own</strong>. They are just different phases expanding into different schedules. You cannot count doses without listing them.</div>
+</div>
+
+</div>
+<figcaption><b>Figure 3 ·</b> Once the schedule becomes an intermediate representation, a whole class of bug is excluded by the structure itself. The three-step taper is legible straight off the calendar — three doses a day for five days, then two, then one: <b>30 doses / 15 days</b>, two numbers that are inherently unequal.</figcaption>
+</figure>
+
+<div class="col">
+
+<h4>Her four examples are this layer's acceptance criteria</h4>
+
+<div class="tw">
+<table>
+<thead><tr><th>Shape</th><th>Order</th><th class="num-col">Doses</th><th class="num-col">day supply</th></tr></thead>
+<tbody>
+<tr><td>q48h</td><td>from 08/01, 10 days</td><td class="num-col">5</td><td class="num-col">10</td></tr>
+<tr><td>weekly</td><td>weekly x 6 weeks</td><td class="num-col">6</td><td class="num-col">42</td></tr>
+<tr><td>loading + maintenance</td><td>1000mg once, then 500mg q24h x 13 days</td><td class="num-col">14</td><td class="num-col">14</td></tr>
+<tr><td>three-step taper</td><td>q8h×5d → q12h×5d → q24h×5d</td><td class="num-col">30</td><td class="num-col">15</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="rule-card stop">
+<span class="tag">Decision D-2 · lock it before refactoring it</span>
+<p>The vial rule (ceil per dose, then multiply)<strong>was already correct in the code</strong> — and it is exactly what a schedule refactor could quietly break. Which is why <code>T-sdv-regression</code> was sequenced before <code>T-phase-model</code>: pin her examples down as tests first, then cut.</p>
+<p>Her counter-example is worth memorising verbatim: daptomycin 700mg, 500mg single-dose vials, 30 days → <strong>2 vials/dose × 30 = 60 vials</strong>. Not 21,000mg ÷ 500 = 42. That second answer assumes the 300mg left over from one dose can be carried to the next — single-dose vials cannot.</p>
+</div>
+
+<h2 id="s5"><span class="num">§ 5</span>Layer ④: closing the candidate set</h2>
+
+<p>This is the only layer that has never existed, and the only place where the risk of the model fabricating something is real. Q1, Q2 and Q5 all point at the same failure mode:</p>
+
+<blockquote>
+let the documentation earn the specificity rather than having the AI reason its way into a more specific diagnosis that the chart does not directly support.
+<cite>SME · Q1 · 2026-08-11</cite>
+</blockquote>
+
+<p>A prompt saying "do not over-specify" is not enough. Two structural constraints instead:</p>
+
+</div>
+
+<figure>
+<div class="figframe">
+
+<div class="archlegend">
+<span><i style="background:var(--accent)"></i>selected · supported by chart text</span>
+<span><i style="background:var(--stamp)"></i>rejected · must state why</span>
+<span style="margin-left:auto">The candidate set is built by <strong>code</strong>; the model picks, it does not generate</span>
+</div>
+
+<div class="dflow" style="min-width:940px;align-items:flex-start">
+
+<div style="flex:0 0 250px">
+<div class="dcap" style="--fam:var(--ink-3)">① Chart text that was quoted</div>
+<div class="dcard" style="--fam:var(--ink-3);--fam-soft:var(--sunk)">
+<div class="dmono" style="font-size:11.5px;line-height:2">
+<span class="dq">postop elbow wound</span><br>
+<span class="dq">culture: Pseudomonas</span><br>
+<span class="dq">culture: MRSA</span><br>
+<span class="dq" style="background:var(--stamp-soft)">depth: not stated</span>
+</div>
+<div class="dfoot">Each of these is a quote inside a <code>Sourced[T]</code><br>Text that was never quoted cannot enter the set</div>
+</div>
+</div>
+
+<div class="darrow" style="flex:0 0 118px;flex-direction:column;gap:4px;padding-top:70px">
+<span class="dhand" style="font-size:18px;text-align:center;line-height:1.15">can only grow<br>from here</span>
+<svg viewBox="0 0 20 14" fill="none" stroke="var(--accent)" stroke-width="1.8" aria-hidden="true"><path d="M1 7h15M12 3l4 4-4 4"/></svg>
+</div>
+
+<div style="flex:0 0 236px">
+<div class="dcap" style="--fam:var(--accent)">② Closed candidate set · built by code</div>
+<div class="dcard dashed" style="--fam:var(--accent);--fam-soft:var(--accent-soft);gap:5px">
+<div class="dcard" style="--fam:var(--rule);padding:7px 10px;border-top-width:1px"><span class="dmono">T81.49XA</span></div>
+<div class="dcard" style="--fam:var(--rule);padding:7px 10px;border-top-width:1px"><span class="dmono">T81.42XA</span></div>
+<div class="dcard" style="--fam:var(--rule);padding:7px 10px;border-top-width:1px"><span class="dmono">L08.9</span></div>
+<div class="dcard" style="--fam:var(--rule);padding:7px 10px;border-top-width:1px"><span class="dmono">B96.5</span></div>
+<div class="dcard" style="--fam:var(--rule);padding:7px 10px;border-top-width:1px"><span class="dmono">B95.62</span></div>
+<div class="dfoot">A code outside this set is something the model <strong>cannot express</strong><br>so "never fabricate" does not rely on self-restraint</div>
+</div>
+</div>
+
+<div class="darrow" style="flex:0 0 96px;flex-direction:column;gap:4px;padding-top:70px">
+<span class="dmono" style="font-size:10.5px;color:var(--ink-3)">④ pick</span>
+<svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 7h15M12 3l4 4-4 4"/></svg>
+</div>
+
+<div style="flex:1;min-width:300px">
+<div class="dcap" style="--fam:var(--ink-3)">③ Judgment · selected and rejected, together</div>
+<div class="dgrid" style="gap:7px">
+<div class="dcard tint" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="dhead"><span class="dbadge">✓</span><span class="dtitle">T81.49XA</span><span class="dchip">PRIMARY</span></div>
+<ul class="dlist"><li>Post-operative surgical site infection is established</li><li>but <strong>the depth is not documented</strong> → take the more conservative one</li></ul>
+</div>
+<div class="dcard" style="--fam:var(--stamp);--fam-soft:var(--stamp-soft)">
+<div class="dhead"><span class="dbadge">✕</span><span class="dtitle">T81.42XA</span><span class="dchip">REJECTED</span></div>
+<ul class="dlist"><li>"deep incisional" was never written by the physician</li><li>Drainage / debridement / hardware <strong>prove nothing about depth</strong></li></ul>
+</div>
+<div class="dcard tint" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="dhead"><span class="dbadge">✓</span><span class="dtitle">L08.9</span><span class="dchip">SECONDARY</span></div>
+<ul class="dlist"><li>Code the disease first, then the organism</li></ul>
+</div>
+<div class="dcard" style="--fam:var(--stamp);--fam-soft:var(--stamp-soft)">
+<div class="dhead"><span class="dbadge">✕</span><span class="dtitle">B96.5 · B95.62</span><span class="dchip">REJECTED</span></div>
+<ul class="dlist"><li>Both organisms cultured positive, but <strong>neither is causally linked to this infection</strong></li><li>In a polymicrobial wound, do not force an organism code in</li></ul>
+</div>
+</div>
+</div>
+
+</div>
+
+<div class="xcut">
+<div><b>Constraint one · the set is closed</b>The set is built by code out of quoted chart text. The model only <strong>picks</strong>; it never generates. So "never fabricate a diagnosis" is a structural guarantee, not a request in a prompt.</div>
+<div><b>Constraint two · rejection reasons are mandatory</b>A layer that outputs only what it chose cannot be audited for whether it reasoned its way into a more specific code — and that is the one failure mode Q1/Q2/Q5 care about.</div>
+<div><b>Side effect · it becomes measurable</b>With a rejected list, the eval can ask "did it correctly <strong>not</strong> choose T81.42XA", instead of only "did it choose right".</div>
+</div>
+
+</div>
+<figcaption><b>Figure 4 ·</b> Two structural constraints move over-specification from <b>invisible</b> to <b>measurable</b>. The quoted chart text on the left bounds the middle set; the model picks inside it; the right side must hand back both the choices and the rejections with reasons.</figcaption>
+</figure>
+
+<div class="col">
+
+<pre><span class="k">@dataclass</span>
+<span class="k">class</span> Judgment:
+primary: CodeChoice
+secondary: list[CodeChoice]
+rejected: list[Rejection] <span class="c"># mandatory; an empty list needs a reason too</span>
+benefit: <span class="s">"part_d"</span> | <span class="s">"part_b"</span> | <span class="s">"medical"</span> | <span class="s">"unknown"</span>
+
+<span class="k">@dataclass</span>
+<span class="k">class</span> CodeChoice:
+code: str
+why: str
+supported_by: Quote <span class="c"># must point back at the chart</span>
+
+<span class="k">@dataclass</span>
+<span class="k">class</span> Rejection:
+code: str
+why_not: str <span class="c"># "deep incisional is not documented"</span>
+</pre>
+
+<div class="rule-card">
+<span class="tag">Decision D-3 · the judgment layer's input must include the benefit</span>
+<p>Q5 is explicit: for the same chart, the diagnosis that should lead can differ between a Part D drug authorization and a medical-benefit one. So the benefit is not a by-product of the output — it is <strong>an input to the judgment</strong>. When it is <code>unknown</code>, this layer should degrade: offer candidates rather than a conclusion.</p>
+</div>
+
+<h2 id="s6"><span class="num">§ 6</span>The CMM questionnaire: a hole in the architecture</h2>
+
+<p class="lede">Of the SME's three outputs, the one-liner has layer ③ and the diagnosis code has layer ④. <strong>The questionnaire answers have nothing at all.</strong>Before writing this section I counted all 21 real CMM forms. The result is quite far from intuition.</p>
+
+<h3>The facts first</h3>
+
+<p>21 forms, <strong>186 questions</strong> in total, of which <strong>98 were answered and 88 left blank</strong> — a 47% blank rate.</p>
+
+<div class="tw">
+<table>
+<thead><tr><th>Case</th><th class="num-col">Questions</th><th class="num-col">Answered</th><th class="num-col">Blank</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td><code>CASE-002</code></td><td class="num-col">0</td><td class="num-col">0</td><td class="num-col">0</td><td>Never even reached the clinical criteria — benefit routing denied it first</td></tr>
+<tr><td><code>CASE-017</code></td><td class="num-col">4</td><td class="num-col">4</td><td class="num-col">0</td><td>Short form, all answered</td></tr>
+<tr><td><code>CASE-020</code></td><td class="num-col">17</td><td class="num-col">4</td><td class="num-col">13</td><td>Antibiotic criteria tree; only one branch was walked</td></tr>
+<tr><td><code>CASE-019</code></td><td class="num-col">33</td><td class="num-col">8</td><td class="num-col">25</td><td>Long form, three quarters blank</td></tr>
+<tr><td colspan="4"><strong>Total</strong></td><td><strong>98 / 186 answered · 47% blank</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Three things that are not what you would guess</h3>
+
+<div class="rule-card">
+<span class="tag">① A blank is correct behaviour, not an omission</span>
+<p>The questionnaire is a <strong>branching tree</strong>, not a flat list of questions. Answer "No" to "is this for Zyvox?" and the six Zyvox-specific questions hanging below it <strong>should</strong> be empty.<code>CASE-020</code> even contains "is this drug being used in a footbath?" — which belongs to somebody else's branch.</p>
+<p>So the design must be able to say "this question does not apply", and must keep that <strong>distinct from</strong>.</p>
+</div>
+
+<div class="rule-card">
+<span class="tag"> "I cannot answer this question".</span>
+<p>② Answers are not only Yes / No<strong>87%</strong>Of the 98 answered, Yes/No accounts for</p>
+<ul>
+<li><strong> (85 of them). The rest are:</strong> — <code>Expedited timeframe</code>, <code>Positron emission tomography</code>, <code>External infusion pump such as IV…</code></li>
+<li><strong>enumerated choices</strong> — <code>Prolia 60mg SQ every 6 months since…</code></li>
+</ul>
+<p>free text</p>
+</div>
+
+<div class="rule-card warn">
+<span class="tag">A layer that only emits booleans fails outright on that 13%.</span>
+<p><code>AGENT.md</code>③ "Plus one sentence" is not a field on the CMM — the doc needs correcting<strong>'s domain primer says "CMM answers: Yes/No. plus one sentence". Across 21 real forms I</strong>could not find anywhere that sentence goes<code>Additional Documentation - Do you have additional documentation to include?: Yes</code>).</p>
+<p> — the form takes answers only; supporting material goes through a different door (<code>system_prompt.md</code>So Rule 7 in <strong>, "Yes/No. followed by ONE clear explanation sentence", is</strong>phrasing guidance for the specialist<code>AGENT.md</code>, not the form's structure. This needs correcting in</p>
+</div>
+
+<h3>, or the next person to pick this up will build a field that does not exist.</h3>
+
+<div class="tw">
+<table>
+<thead><tr><th>Where the hole is</th><th>Output</th><th>Produced by</th><th>Validated by</th></tr></thead>
+<tbody>
+<tr><td>PA one-liner</td><td><code>pa_calc.py</code> ③</td><td><code>pipeline.py</code> ②</td><td><span class="pill p-ok">calc · format</span></td></tr>
+<tr><td>Scored by</td><td>Diagnosis code<span style="color:var(--ink-3)">layer ④</span></td><td> (to build)</td><td><span class="pill p-ok">coding</span></td></tr>
+<tr><td><strong>closed candidate set</strong></td><td><span class="pill p-halt">CMM questionnaire answers</span></td><td><span class="pill p-halt">none</span></td><td><span class="pill p-halt">none</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>none<code>render_worksheet()</code>Checked: <code>run_evals.py</code> does not produce them, none of the five dimensions in <code>expected.json</code> scores them, and there is no <code>cmm_answers</code> field in <strong>.</strong>A third of the output is unimplemented, unvalidated and unscored</p>
+
+<h3> — and it happens to be the one thing the payer reads line by line.</h3>
+
+<p>Why it does not belong inside layer ④</p>
+
+<div class="tw">
+<table>
+<thead><tr><th></th><th>The two judgments look alike and are not:</th><th>④ coding judgment</th></tr></thead>
+<tbody>
+<tr><td>CMM answering</td><td>Shape of the question<strong>Which code do I</strong>pick</td><td> out of the chart<strong>Given one of the payer's questions,</strong>does the chart hold</td></tr>
+<tr><td> enough to support a Yes</td><td>At bottom</td><td><strong>classification</strong></td></tr>
+<tr><td>substantiation</td><td>Typical failure</td><td>reasoning into undocumented specificity<em>likely</em>treating <em>documented</em></td></tr>
+<tr><td> as</td><td>Output</td><td>a set of codes + rejection reasons</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>one three-state answer per question</p>
+
+<blockquote>
+The AI should never convert “likely” into “documented.” For example, if a payer asks whether the patient failed preferred antibiotics, seeing that several antibiotics appear in the medication history does not automatically establish treatment failure.
+<cite>SME · Q6 · 2026-08-11</cite>
+</blockquote>
+
+<h3>The SME wrote this layer's specification out directly in Q6:</h3>
+
+<pre><span class="k">@dataclass</span>
+<span class="k">class</span> Question:
+id: QId
+text: str
+kind: YesNo | Choice[list[str]] | FreeText
+branch: BranchCond | None <span class="c">The design: three-state answers</span>
+
+<span class="c"># when this question applies at all</span>
+<span class="k">type</span> Answer =
+Answered { value, support: list[Quote] } <span class="c"># the point: three states, not two</span>
+| NotApplicable { because: BranchCond } <span class="c"># must point back at the chart</span>
+| Unsupported { wanted, missing: str } <span class="c"># off-branch → blank, and correct</span>
+</pre>
+
+<div class="rule-card stop">
+<span class="tag"># wanted a Yes, no evidence → do not answer, raise a finding</span>
+<p>Decision D-5 · "blank" and "cannot answer" must stay separate<strong>On the submitted form the two are</strong>completely identical<strong> — both are an empty box. But they mean opposite things: one is correct behaviour, the other is</strong>.</p>
+<p>a risk somebody must see before submission</p>
+<p><strong>Corollary:</strong> this layer never emits a bare <code>Yes</code>. A <code>Yes</code> either carries its chart citation or it is not a <code>Yes</code> — it is an <code>Unsupported</code> plus a <span class="pill p-halt">BLOCK</span>-level finding.</p>
+</div>
+
+</div>
+
+<figure>
+<div class="figframe">
+
+<div class="archlegend">
+<span><i style="background:var(--ink-3)"></i>NotApplicable — off-branch; blank is <strong>correct</strong></span>
+<span><i style="background:var(--accent)"></i>Answered — supported by a chart citation</span>
+<span><i style="background:var(--stamp)"></i>Unsupported — wanted to answer, no evidence, so <strong>do not answer</strong> and raise a finding</span>
+<span style="margin-left:auto">Measured: 186 questions / 98 answered / 88 blank (47%)</span>
+</div>
+
+<div class="dsec" style="min-width:900px">
+<div class="dcap">The questionnaire is a branching tree, not a flat list</div>
+<div class="dcard" style="--fam:var(--ink);--fam-soft:var(--sunk);flex-direction:row;align-items:center;gap:14px">
+<span class="dbadge" style="--fam:var(--ink-3);background:var(--ink-3)">Q</span>
+<span class="dmono" style="flex:1">Is this request for Zyvox (linezolid)?</span>
+<span class="dchip" style="--fam:var(--stamp);--fam-soft:var(--stamp-soft);margin:0">Actual answer: No</span>
+</div>
+<div class="darrow down" style="height:22px"><svg viewBox="0 0 14 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 1v14M3 12l4 4 4-4"/></svg></div>
+</div>
+
+<div class="branch" style="min-width:900px">
+
+<div>
+<span class="blabel" style="--fam:var(--ink-3);--fam-soft:var(--sunk)">Branch not taken · the whole subtree stays blank</span>
+<div class="dgrid" style="gap:7px">
+<div class="dcard dashed" style="--fam:var(--ink-3);--fam-soft:var(--sunk)">
+<span class="dmono" style="font-size:11px">Documented VRE faecium or MRSA infection?</span>
+<div class="dfoot">NotApplicable · (blank)</div>
+</div>
+<div class="dcard dashed" style="--fam:var(--ink-3);--fam-soft:var(--sunk)">
+<span class="dmono" style="font-size:11px">Tried or contraindicated to other susceptible antibiotics?</span>
+<div class="dfoot">NotApplicable · (blank)</div>
+</div>
+<div class="dcard dashed" style="--fam:var(--ink-3);--fam-soft:var(--sunk)">
+<span class="dmono" style="font-size:11px">Started IV antibiotics in hospital and needs outpatient continuation?</span>
+<div class="dfoot">NotApplicable · (blank)</div>
+</div>
+</div>
+<p class="dhand mute" style="margin:12px 0 0">Blank is correct behaviour — 47% of questions across 21 forms are like this</p>
+<p class="dhand warn" style="margin:4px 0 0">Answering a question off your own branch hands the payer a denial reason for free</p>
+</div>
+
+<div>
+<span class="blabel" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">Branch taken · this is where real judgment happens</span>
+<div class="dgrid" style="gap:7px">
+<div class="dcard tint" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<span class="dmono" style="font-size:11px">Prescribed by an infectious disease physician?</span>
+<div class="dhead" style="margin-top:2px"><span class="dbadge">✓</span><span class="dtitle" style="font-size:12.5px">Answered &nbsp;“Yes”</span></div>
+<div class="dfoot" style="border-color:var(--accent)">Citation: ID consult note 08/02 — it really is in the chart</div>
+</div>
+<div class="dcard" style="--fam:var(--stamp);--fam-soft:var(--stamp-soft)">
+<span class="dmono" style="font-size:11px">Documented failure of preferred antibiotics?</span>
+<div class="dhead" style="margin-top:2px"><span class="dbadge">!</span><span class="dtitle" style="font-size:12.5px">Unsupported</span></div>
+<ul class="dlist"><li>Those drugs do appear in the medication history</li><li>but <strong>not one line says they failed</strong></li></ul>
+<div class="dfoot" style="border-color:var(--stamp)">likely ≠ documented → do not answer</div>
+</div>
+<div class="darrow down" style="height:20px;color:var(--stamp)"><svg viewBox="0 0 14 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 1v14M3 12l4 4 4-4"/></svg></div>
+<div class="dcard" style="--fam:var(--stamp);--fam-soft:var(--stamp-soft)">
+<div class="dhead"><span class="dbadge">BLOCK</span><span class="dtitle" style="font-size:12.5px">Somebody must see this before submission</span></div>
+<ul class="dlist"><li>Missing: documented failure / intolerance / contraindication for the preferred antibiotics</li><li>State what would fix it, alongside</li></ul>
+</div>
+</div>
+</div>
+
+</div>
+
+<div class="xcut">
+<div style="flex:1.5"><b>Why three states are required</b><code>NotApplicable</code> and <code>Unsupported</code> both submit <strong>as an empty box</strong>, and mean opposite things — one is correct behaviour, the other is a risk somebody has to see. Two states lose that distinction permanently.</div>
+<div><b>Never a bare Yes</b>A <code>Yes</code> either carries its chart citation or it is not a <code>Yes</code> — it is a BLOCK-level finding.</div>
+<div><b>This is Q6's second reason</b>The SME's words: the AI should never convert “likely” into “documented.”</div>
+</div>
+
+</div>
+<figcaption><b>Figure 5 ·</b> A single <code>No</code> turns a whole subtree into <code>NotApplicable</code>, and those blanks are correct. Real judgment only happens on the branch that was taken: answer <code>Yes</code> where a citation supports it, and where none does, <b>do not answer</b> — raise a blocking finding instead.</figcaption>
+</figure>
+
+<div class="col">
+
+<h3>Where the questionnaire templates come from</h3>
+
+<p>A form is specific to a <strong>payer × drug class</strong> — <code>Antibiotics CL REQ 05-2026 NV</code>, <code>Humana Electronic PA Form</code>, <code>Caremark Electronic PA Form (2017 NCPDP)</code> — with the version date and even the state baked into its name.</p>
+
+<ul>
+<li><strong>Short term</strong> — treat the questionnaire as <strong>part of the input</strong>. The questions are on screen when she submits, so let her (or the PDF intake) bring them in. The system answers questions; it does not have to know which questions exist. That is enough to start without building a template library at all.</li>
+<li><strong>Long term</strong> — a template library plus branch solving. But that depends on <a href="#a1"><strong>A1</strong></a> (whether a finished PA is pasted into a portal by hand or submitted electronically). If it stays manual, a template library costs more to maintain than it returns; if electronic submission (<code>ePA</code>) is possible, it becomes mandatory.</li>
+</ul>
+
+<div class="rule-card">
+<span class="tag">What this means for the board</span>
+<p>This section adds work to S1 rather than rearranging it. At least two new blocks: <strong>the CMM answering layer</strong> (the JUDGE row, with its own few-shot corpus separate from ④) and <strong>a sixth eval dimension</strong> (the EVAL row: <code>expected.json</code> gains a <code>cmm_answers</code> field).</p>
+<p><code>S1-G5</code> needs rewording too — right now it only mentions the coding dimension.</p>
+</div>
+
+<h2 id="s7"><span class="num">§ 7</span>Layer ⑤: findings, not booleans</h2>
+
+<p>Q6 gave the five most common preventable denial reasons. They should not become five <code>bool</code> values but structured <strong>Finding</strong> objects — because what she wants is not "will this pass" but "where will the payer push back, while there is still time to fix it".</p>
+
+<pre><span class="k">@dataclass</span>
+<span class="k">class</span> Finding:
+severity: HALT | BLOCK | FLAG | NOTE
+check: CheckId
+what: str <span class="c"># what went wrong</span>
+evidence: Quote | None
+fix: str <span class="c"># what would resolve it</span>
+</pre>
+
+<div class="tw">
+<table>
+<thead><tr><th>Check</th><th>The question it asks</th><th>Typical severity</th></tr></thead>
+<tbody>
+<tr><td>Diagnosis support</td><td>Is the submitted diagnosis explicitly supported by the chart? Is the use on-label?</td><td><span class="pill p-flag">FLAG</span></td></tr>
+<tr><td>Clinical evidence</td><td>For each payer question, does the chart actually hold enough to answer Yes?</td><td><span class="pill p-halt">BLOCK</span></td></tr>
+<tr><td>Order consistency</td><td>Do dose, frequency, dates, day supply and total quantity match the signed order?</td><td><span class="pill p-flag">FLAG</span></td></tr>
+<tr><td>Step therapy</td><td>For a non-preferred drug, is failure of or contraindication to the preferred one documented?</td><td><span class="pill p-flag">FLAG</span></td></tr>
+<tr><td>Quantity and benefit</td><td>Vial counts, J-code units, which benefit, and whether service codes have crept in</td><td><span class="pill p-halt">BLOCK</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="rule-card warn">
+<span class="tag">Decision D-4 · Part B / Part D is a warning, not a decision</span>
+<p>Three cases in the library failed here (denied under Part D, eligible under Part B, the payer citing the DME infusion-pump rule). Designed as <strong>a flag that cites the rule</strong>, handing the choice back to the specialist rather than rerouting automatically. The reason: it fits inside the existing architecture, needs no sixth layer, and does not cross the specialist-in-the-loop line.</p>
+<p><em>The conditions for revisiting this are recorded as Q-03 on the board.</em></p>
+</div>
+
+<p>She even wrote the warning text herself, so it can be used as the spec verbatim:</p>
+
+<blockquote>
+Requested 21 days; submitted signed order supports 9 days. Updated order or supporting documentation may be required.
+<cite>SME · Q6 · a sample output for the order-consistency check</cite>
+</blockquote>
+
+<h2 id="s8"><span class="num">§ 8</span>Eval architecture, and a problem that must be solved now</h2>
+
+<p>Five dimensions scored per case (extraction / calc / coding / format / safety) already run. Three things to add: bring the 21 cases in; flip the coding dimension from "the extractor must emit no ICD" to "the judgment layer's output vs expected ICD"; and, per §6, <strong>add a sixth dimension, <code>cmm</code></strong> — otherwise a third of the output is never scored at all.</p>
+
+<div class="rule-card warn">
+<span class="tag">How the sixth dimension scores</span>
+<p>Comparing answer values alone would grade "correctly blank" and "should have answered but missed it" identically. Compare all three states per question instead: <code>Answered</code> must have the right value <strong>and a citation that points at text which really exists</strong>; <code>NotApplicable</code> must line up with a blank on the real form; <code>Unsupported</code> must produce its corresponding finding.</p>
+</div>
+
+<div class="rule-card stop">
+<span class="tag">⚠ Data leakage · this one is real</span>
+<p>The case library is simultaneously the <strong>regression suite</strong> and the <strong>few-shot corpus</strong>. If layer ④'s few-shot examples come from the cases it is scored on, the score is <strong>meaningless</strong> — it is reciting the answers.</p>
+<p><strong>The fix:</strong> the 21 cases must be split. Suggested <code>14 few-shot / 7 held-out</code>, committed to the repo and never redrawn.</p>
+<p><strong>And say this part out loud:</strong> 7 held-out cases means the score has a granularity of 1/7 ≈ 14%, so one case flipping moves it a long way. That number is enough to <strong>catch a regression</strong> and nowhere near enough to <strong>claim an accuracy figure</strong>. The second conversation waits for more cases.</p>
+</div>
+
+<h4>Making an SME ruling mechanical</h4>
+
+<p>08-03 already proved the loop works. Fix it as the template — every ruling produces four things at once:</p>
+
+</div>
+
+<figure>
+<div class="figframe">
+
+<div class="archlegend">
+<span><i style="background:var(--accent)"></i>the two that become a loop (nobody can break it afterwards)</span>
+<span><i style="background:var(--ink-3)"></i>the two that keep the "why" alive past this session</span>
+<span style="margin-left:auto">Template from the 2026-08-03 nursing-code ruling; already proven</span>
+</div>
+
+<div class="dflow" style="min-width:980px;align-items:flex-start;gap:0">
+
+<div style="flex:0 0 300px">
+<div class="dcap" style="--fam:var(--accent)">One ruling from the SME</div>
+<div class="bubble">“remove the nursing coding<br>from the ai workflow”</div>
+<div class="dfoot" style="margin-top:18px;border-top:none;padding-top:0">
+One iMessage. Non-technical, said in passing, <br>but it is <strong>authoritative</strong> — it overrides the source document.
+</div>
+</div>
+
+<div class="darrow" style="flex:0 0 54px;padding-top:52px;align-items:flex-start">
+<svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 7h15M12 3l4 4-4 4"/></svg>
+</div>
+
+<div style="flex:1;min-width:320px">
+<div class="dcap">Four outputs, produced in one go</div>
+<div class="dgrid" style="gap:7px">
+<div class="dcard" style="--fam:var(--ink-3);--fam-soft:var(--sunk)">
+<div class="dhead"><span class="dbadge">1</span><span class="dtitle">Code / prompt change</span></div>
+<ul class="dlist"><li>nursing table deleted from <code>pa_calc.py</code></li><li>an explicit prohibition added to the system prompt</li></ul>
+</div>
+<div class="dcard tint" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="dhead"><span class="dbadge">2</span><span class="dtitle">One test</span><span class="dchip">loop</span></div>
+<ul class="dlist"><li><code>test_nursing_codes_never_auto_added</code></li></ul>
+</div>
+<div class="dcard tint" style="--fam:var(--accent);--fam-soft:var(--accent-soft)">
+<div class="dhead"><span class="dbadge">3</span><span class="dtitle">One eval assertion</span><span class="dchip">loop</span></div>
+<ul class="dlist"><li>99601/99602 added to <code>forbidden_in_output</code> on both cases</li></ul>
+</div>
+<div class="dcard" style="--fam:var(--ink-3);--fam-soft:var(--sunk)">
+<div class="dhead"><span class="dbadge">4</span><span class="dtitle">Date + verbatim quote on file</span></div>
+<ul class="dlist"><li><code>memory/sme_answers.md</code> records the exact words</li></ul>
+</div>
+</div>
+</div>
+
+<div class="darrow" style="flex:0 0 54px;padding-top:52px;align-items:flex-start;color:var(--accent)">
+<svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 7h15M12 3l4 4-4 4"/></svg>
+</div>
+
+<div style="flex:0 0 268px;padding-top:26px">
+<p class="dhand" style="margin:0 0 14px">② and ③ form the loop —<br>no future change can quietly<br>break this rule again</p>
+<p class="dhand mute" style="margin:0">① and ④ handle now and later —<br>without ④, in six months nobody<br>remembers why the code is like this</p>
+</div>
+
+</div>
+
+<div class="xcut">
+<div><b>Without ②③</b>The rule <strong>disappears quietly</strong> in the next refactor, and nothing raises an alarm — until a case gets denied.</div>
+<div><b>Without ④</b>The code still runs, but nobody knows why. The next person (or the next AI) treats it as a quirk worth optimising away.</div>
+<div><b>Why this is a template and not a special case</b>08-03 actually walked this path, all four parts, and there has been no regression since. The eight Q1–Q8 answers land the same way.</div>
+</div>
+
+</div>
+<figcaption><b>Figure 6 ·</b> One ruling, four outputs, done in one pass. This is not process ceremony — <b>②③ are the mechanical guarantee</b> (no future change can break the rule) and <b>①④ are the present and the memory</b>. Miss any one of the four and the ruling's lifespan is this session only.</figcaption>
+</figure>
+
+<div class="col">
+
+<h2 id="s9"><span class="num">§ 9</span>Explicit assumptions: five blanks outside the engine</h2>
+
+<p>Every one below is something I <strong>have no evidence for and can only assume</strong>. They are numbered <code>A1</code>–<code>A5</code>, and that numbering is what the rest of the document refers to. They are written down so that when one is overturned, what collapses is immediately visible.</p>
+
+<div class="rule-card stop">
+<span class="tag">Two of them change the structure; the other three only change parameters</span>
+<p><strong><a href="#a1">A1 · once a PA is ready, how does it reach the payer?</a></strong> — pasted into the CoverMyMeds portal by hand, or submitted electronically (<code>ePA</code>)? In the first case the deliverable is <strong>a worksheet a person copies from</strong> and the system boundary ends there. In the second it needs a submission state machine, receipts, retries and an audit trail — <strong>a different system entirely</strong>.</p>
+<p><strong><a href="#a4">A4 · what actually arrives at the start of a case?</a></strong> — how many documents, how many pages, typed or scanned, delivered how? <strong>I have never seen a single real referral</strong>, so §3's extraction contract and P1's PDF intake are both designed against guesswork.</p>
+<p>Neither of these is a detail to be settled later. Both would make <strong>the design above structurally wrong</strong>. Which is why they lead the follow-up questions to the SME.</p>
+</div>
+
+<div class="tw">
+<table>
+<thead><tr><th>Assumption</th><th>Basis</th><th>What collapses if it is wrong</th></tr></thead>
+<tbody>
+<tr id="a1"><td><strong>A1</strong> Output is pasted into the CoverMyMeds portal by hand</td>
+<td>The CMM screenshots in the case library carry a "Send To Plan" button, so it is manual today</td>
+<td>If an electronic submission API is reachable (<code>ePA</code> / <code>NCPDP</code> standards), it needs a submission state machine, receipts, retries and an audit trail — <strong>this is the biggest one</strong> and it moves the system boundary</td>
+</tr>
+<tr id="a2"><td><strong>A2</strong> Single tenant, serving one specialist's workflow</td>
+<td>AGENT.md says "multi-provider tool", but the sense is unclear</td>
+<td>Real multi-tenancy adds a tenant model, data isolation, and per-provider configuration and coding preferences</td>
+</tr>
+<tr id="a3"><td><strong>A3</strong> Volume is single digits to a few dozen a day</td>
+<td>The nature of home-infusion PA plus a specialist in the loop</td>
+<td>Hundreds a day would need a queue, async processing and concurrency control; the current synchronous pipeline is fine</td>
+</tr>
+<tr id="a4"><td><strong>A4</strong> A referral is several PDFs, some of them scans</td>
+<td>Guesswork. <strong>I have never seen a single real referral</strong></td>
+<td>Layer ①'s contract and the shape of PDF intake both need redoing (board Q-01)</td>
+</tr>
+<tr id="a5"><td><strong>A5</strong> Drug reference data is a hand-maintained table</td>
+<td>Four drugs today; the case library already exceeds it</td>
+<td>A real HCPCS dataset adds a whole reference-data subsystem, and the question of how much to trust it (board Q-02)</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="rule-card warn">
+<span class="tag">A1 and A4 are not details</span>
+<p>If either is wrong it is not a parameter change, it <strong>makes the design above structurally wrong</strong>. Which is why they lead the follow-up questions to the SME.</p>
+</div>
+
+<h2 id="s10"><span class="num">§ 10</span>Trade-offs on the record</h2>
+
+<div class="tw">
+<table>
+<thead><tr><th>Decision</th><th>What was given up</th><th>What it bought</th></tr></thead>
+<tbody>
+<tr><td>Evidence travels with the value (<code>Sourced[T]</code>)</td><td>Roughly 3x the JSON, longer prompts, and more chance the model drops a field</td><td>"Do not infer" becomes a type constraint instead of a hope expressed in a prompt</td></tr>
+<tr><td>The schedule as an intermediate representation</td><td>Far slower than one multiplication, and more code</td><td>A whole class of Q8 bug excluded structurally; four unusual shapes need no special-case branches</td></tr>
+<tr><td>Closed candidate set + mandatory rejection reasons</td><td>Longer, costlier output; and the set construction itself can miss a candidate</td><td>Fabrication is structurally blocked; over-specification becomes visible and measurable in the output</td></tr>
+<tr><td>A fixed pipeline rather than an agent</td><td>Flexibility. It stops on anything nobody designed for, instead of improvising</td><td>Auditable, replayable, regression-testable — worth more than flexibility in a medical setting</td></tr>
+<tr><td>Three-state CMM answers</td><td>More complex than booleans; every Yes carries a citation, so output is longer and costs more</td><td>"Correctly blank" and "cannot answer without evidence" stop being the same thing — and the second is the second most common denial reason</td></tr>
+<tr><td>A 14 / 7 split</td><td>A third less few-shot material</td><td>The score stops being recitation; there is a real, if coarse, signal</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="s11"><span class="num">§ 11</span>When to come back and change this document</h2>
+
+<ul>
+<li><strong>When the SME replies</strong> — <a href="#a1"><strong>A1</strong></a> (how a finished PA reaches the payer: pasted into a portal by hand vs submitted electronically) and <a href="#a4"><strong>A4</strong></a> (what a referral actually looks like at the start of a case). Once either is answered, §2's system boundary and §9's assumption table both need rewriting. These are the only two unknowns in the document that would <strong>change the structure</strong>.</li>
+<li><strong>When the judgment layer gets its first score</strong> — if the closed candidate set's recall is not good enough (the right code is not in the set), the constraint mechanism needs redesigning, not more prompt.</li>
+<li><strong>Once A1 confirms electronic submission is possible</strong> — the CMM template library goes from "not worth it" to "mandatory", and §6's short-term plan gets replaced.</li>
+<li><strong>Past 100 cases</strong> — the 14/7 split gets redrawn and the warning about score granularity can come out.</li>
+<li><strong>If the Part B/D flag proves accurate enough</strong> — promoting it from preflight to a judgment layer becomes a real option (recorded as board Q-03).</li>
+</ul>
+
+<h2 id="s12"><span class="num">§ 12</span>Appendix · Glossary</h2>
+
+<p class="lede">The goal of this section: once you have read it you can open any CMM PDF in <code>data/</code> and understand every field on it. Each entry carries <strong>what it means for the engineering</strong> — because many of these terms end up as a field, a branch, or a bug in the code. It sits at the end because it is <strong>reference material</strong>, not required reading: turn back here whenever the main text loses you.</p>
+
+<h3>Abbreviations, at a glance</h3>
+
+<p>Every abbreviation in the document, listed once. <strong>These are the domain ones</strong> — <code>JSON</code> <code>PDF</code> <code>API</code> <code>OCR</code> and other ordinary engineering vocabulary is not listed.<code>Group</code> points at the groups later in this section.</p>
+
+<div class="tw">
+<table>
+<thead><tr><th style="width:12%">Abbrev.</th><th style="width:40%">Full form</th><th style="width:40%">What it is, in one line</th><th style="width:8%">Group</th></tr></thead>
+<tbody>
+<tr><td><code>SME</code></td><td>Subject Matter Expert</td><td><strong>Subject matter expert.</strong>In this project, specifically the licensed PA specialist — the sole domain authority</td><td>—</td></tr>
+<tr><td><code>PA</code></td><td>Prior Authorization</td><td><strong>Prior authorization.</strong>What this whole project is about</td><td>E</td></tr>
+<tr><td><code>CMM</code></td><td>CoverMyMeds</td><td>The most-used PA submission portal, and also the questionnaire inside it</td><td>E</td></tr>
+<tr><td><code>ICD-10</code></td><td>International Classification of Diseases, 10th Revision</td><td><strong>International Classification of Diseases, 10th revision.</strong>The diagnosis code</td><td>B</td></tr>
+<tr><td><code>HCPCS</code></td><td>Healthcare Common Procedure Coding System</td><td><strong>Healthcare Common Procedure Coding System.</strong>J-codes are one family inside its Level II</td><td>B</td></tr>
+<tr><td><code>CPT</code></td><td>Current Procedural Terminology</td><td><strong>Current Procedural Terminology.</strong>The nursing visit codes 99601/99602 belong to this set</td><td>B</td></tr>
+<tr><td><code>NDC</code></td><td>National Drug Code</td><td>National Drug Code — down to the manufacturer's packaging</td><td>B</td></tr>
+<tr><td><code>GPI</code></td><td>Generic Product Identifier</td><td>Generic Product Identifier</td><td>B</td></tr>
+<tr><td><code>DAW</code></td><td>Dispense As Written</td><td><strong>Dispense as written.</strong><code>DAW-1</code> = the physician requires the brand product</td><td>B</td></tr>
+<tr><td><code>SDV</code> / <code>MDV</code></td><td>Single-Dose Vial / Multi-Dose Vial</td><td><strong>Single-dose vial / multi-dose vial.</strong>This project uses SDV logic only</td><td>A</td></tr>
+<tr><td><code>SOC</code></td><td>Start of Care</td><td><strong>Start of care.</strong>The origin point of every schedule</td><td>A</td></tr>
+<tr><td><code>IV</code> / <code>SQ</code></td><td>intravenous / subcutaneous</td><td><strong>Intravenous / subcutaneous.</strong>That <code>IV</code> in the one-liner is this</td><td>A</td></tr>
+<tr><td><code>JW</code></td><td> (HCPCS modifier JW)</td><td>The wastage modifier. Not an acronym — it is a code</td><td>A</td></tr>
+<tr><td><code>DME</code></td><td>Durable Medical Equipment</td><td><strong>Durable medical equipment.</strong>An infusion pump is one — and that fact decides Part B vs Part D</td><td>C</td></tr>
+<tr><td><code>FDA</code></td><td>Food and Drug Administration</td><td>Food and Drug Administration. The indications it approves are what "on-label" means</td><td>C</td></tr>
+<tr><td><code>ID</code></td><td>Infectious Disease</td><td><strong>Infectious disease.</strong><code>ID physician</code> = an infectious disease physician</td><td>D</td></tr>
+<tr><td><code>MRSA</code></td><td>Methicillin-Resistant Staphylococcus Aureus</td><td>Methicillin-resistant Staphylococcus aureus → <code>B95.62</code></td><td>D</td></tr>
+<tr><td><code>VRE</code></td><td>Vancomycin-Resistant Enterococcus</td><td>Vancomycin-resistant Enterococcus. The term in that questionnaire item in figure 5</td><td>D</td></tr>
+<tr><td><code>PICC</code></td><td>Peripherally Inserted Central Catheter</td><td>Peripherally inserted central catheter</td><td>D</td></tr>
+<tr><td><code>UTI</code></td><td>Urinary Tract Infection</td><td>Urinary tract infection → <code>N39.0</code></td><td>D</td></tr>
+<tr><td><code>MoCA</code></td><td>Montreal Cognitive Assessment</td><td>Montreal Cognitive Assessment. One of the Leqembi criteria in the case library</td><td>D</td></tr>
+<tr><td><code>ePA</code></td><td>electronic Prior Authorization</td><td>Electronic prior authorization</td><td>E</td></tr>
+<tr><td><code>NCPDP</code></td><td>National Council for Prescription Drug Programs</td><td>National Council for Prescription Drug Programs — who set the ePA standards</td><td>E</td></tr>
+<tr><td><code>HIPAA</code></td><td>Health Insurance Portability and Accountability Act</td><td>Health Insurance Portability and Accountability Act</td><td>E</td></tr>
+<tr><td><code>PHI</code></td><td>Protected Health Information</td><td>Protected health information</td><td>E</td></tr>
+<tr><td><code>BAA</code></td><td>Business Associate Agreement</td><td>Business Associate Agreement. Required before PHI goes to any vendor</td><td>E</td></tr>
+<tr><td><code>LLM</code></td><td>Large Language Model</td><td>Large language model. Here, the kind of call layers ① and ④ make</td><td>—</td></tr>
+<tr><td><code>IR</code></td><td>Intermediate Representation</td><td><strong>Intermediate representation.</strong>§4 treats the schedule as the IR</td><td>—</td></tr>
+<tr><td><code>P1</code></td><td>(internal) Phase 1</td><td>The first phase: the smallest thing a specialist can use end to end</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>A · Reading an order</h3>
+
+<div class="tw">
+<table>
+<thead><tr><th style="width:20%">Term</th><th style="width:42%">What it is</th><th>What it means for the engineering</th></tr></thead>
+<tbody>
+<tr>
+<td><code>q8h</code> <code>q12h</code> <code>q24h</code> <code>q48h</code></td>
+<td><strong>Frequency.</strong><code>q</code> is Latin <em>quaque</em> (every), followed by hours. <code>q8h</code> = every 8 hours = 3 doses a day. <code>qd</code> / <code>daily</code> also means once a day</td>
+<td>This is the key into <code>FREQUENCY_TABLE</code>. <strong>The trap</strong>: <code>q48h</code> is 0.5 doses a day and does not fit in <code>dict[str, int]</code> at all — which is exactly why §4 had to rewrite the calculation layer</td>
+</tr>
+<tr>
+<td><code>SOC</code><br><span style="font-size:11px;color:var(--ink-3)">Start of Care</span></td>
+<td><strong>Start of care.</strong>The day the first dose goes in</td>
+<td>The origin of every schedule. Without it, zero-trust validation is a <strong>hard error and halts</strong>, because no date or dose count downstream can be derived</td>
+</tr>
+<tr>
+<td>loading dose<br>maintenance</td>
+<td><strong>Loading dose / maintenance dose.</strong>The first dose is larger, to bring the blood level up; the rest hold it there</td>
+<td>Two <code>Phase</code> objects, each computing its own vials and J-code units. <strong>Not</strong> one dose repeated N times</td>
+</tr>
+<tr>
+<td>taper</td>
+<td><strong>A taper.</strong>For example q8h for five days, then q12h for five, then q24h for five</td>
+<td>Three <code>Phase</code> objects. Never average the frequency — that produces the wrong total dose count</td>
+</tr>
+<tr>
+<td><code>SDV</code> / <code>MDV</code></td>
+<td><strong>Single-dose vial / multi-dose vial.</strong>An SDV is used once and the rest is discarded; an MDV can be kept for the next dose</td>
+<td>This project uses <strong>SDV logic only</strong>. So it is <code>ceil(dose ÷ vial size)</code> <em>per dose</em>, then multiplied by the dose count — which is the entire reason 700mg from 500mg vials comes to 60 vials and not 42</td>
+</tr>
+<tr>
+<td>wastage<br><code>JW modifier</code></td>
+<td><strong>Wastage.</strong>A 335mg dose from a 500mg vial discards 165mg. Some payers require it billed separately with the <code>JW</code> modifier</td>
+<td>Today this only raises a flag for the specialist. The JW rules were never fully asked about (part of the original Q7)</td>
+</tr>
+<tr>
+<td>home infusion</td>
+<td><strong>Home infusion.</strong>The patient infuses at home, themselves or with a visiting nurse — as opposed to inpatient or an outpatient infusion centre</td>
+<td>It decides two things: whether the benefit is Part B or Part D, and whether per-diem service codes appear at all</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>B · Three unrelated coding systems</h3>
+
+<div class="rule-card">
+<span class="tag">Remember this one line first</span>
+<p><strong>ICD says WHY, J-codes say WHAT DRUG WAS GIVEN, S-codes and 99601 say WHO CAME AND GAVE IT.</strong>Three systems, three different maintaining bodies, three completely different shapes, answering three different questions. Confusing them is Q6's fifth denial reason.</p>
+</div>
+
+<div class="tw">
+<table>
+<thead><tr><th style="width:20%">Term</th><th style="width:42%">What it is</th><th>What it means for the engineering</th></tr></thead>
+<tbody>
+<tr>
+<td><code>ICD-10</code></td>
+<td><strong>The diagnosis code</strong> — what the patient has. A letter, digits and an optional suffix, e.g. <code>T81.49XA</code> (post-operative surgical site infection, depth unspecified). Used worldwide, maintained by the WHO</td>
+<td>Layer ④'s output. <strong>Never generated</strong> — only picked out of a closed set built from quoted chart text</td>
+</tr>
+<tr>
+<td><code>HCPCS</code> / <code>J-code</code></td>
+<td><strong>The billing code</strong> — what drug, and how many "units". Everything starting with <code>J</code> is an injectable. Each code carries its own unit definition: <code>J0692</code> = cefepime <em>per 500mg</em></td>
+<td>Units = <code>ceil(dose ÷ mg per unit)</code>.<strong>A separate calculation from the vial count</strong> — one vial is not one unit. A 2g dose is 1 vial but 4 J0692 units</td>
+</tr>
+<tr>
+<td><code>S9500</code> <code>S9501</code> <code>S9502</code></td>
+<td><strong>Per-diem service codes</strong> — a daily bundled rate for the home infusion <em>service</em> (drug, supplies, coordination). Split by frequency: once daily / twice daily / q8h</td>
+<td>Q4's rule: whether they appear is decided by <strong>the benefit type</strong>, <strong>not by how many drugs there are</strong>. A medication-only authorization (CMM / Part D) should carry none</td>
+</tr>
+<tr>
+<td><code>99601</code> <code>99602</code></td>
+<td><strong>Nursing visit codes</strong> — the labour cost of a nurse coming to infuse</td>
+<td>Removed from AI scope by the SME on 2026-08-03. Now held by one test and two eval bans, and <strong>may never reappear</strong></td>
+</tr>
+<tr>
+<td><code>DAW-1</code></td>
+<td><strong>Dispense As Written.</strong> The physician requires the brand product; no generic substitution</td>
+<td>A field on the CMM. <strong>This is the question experiment #1 crashed on</strong> — the model "inferred" a Yes from context, and the chart contained no such requirement</td>
+</tr>
+<tr>
+<td><code>NDC</code> / <code>GPI</code></td>
+<td>Drug identifiers, down to manufacturer and pack size</td>
+<td>They appear in the case data but are unused today. They matter once a real drug dataset is wired in</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>C · Who pays</h3>
+
+<div class="tw">
+<table>
+<thead><tr><th style="width:20%">Term</th><th style="width:42%">What it is</th><th>What it means for the engineering</th></tr></thead>
+<tbody>
+<tr>
+<td>payer / plan</td>
+<td><strong>The insurer / the specific plan.</strong>Humana and Caremark both appear in the case library</td>
+<td>Questionnaire templates are specific to a <em>payer × drug class</em> pair, so "the questionnaire" is not one form but a family of them</td>
+</tr>
+<tr>
+<td>Medicare<br>Part A / B / C / D</td>
+<td>The four parts of US Medicare: <strong>A</strong> inpatient, <strong>B</strong> outpatient and medical equipment, <strong>C</strong> the commercially-managed bundle, <strong>D</strong> prescription drugs</td>
+<td>Only <strong>the boundary between B and D</strong> affects us — and it affects us a lot. See the next row</td>
+</tr>
+<tr>
+<td><code>DME</code><br><span style="font-size:11px;color:var(--ink-3)">Durable Medical Equipment</span></td>
+<td><strong>Durable medical equipment</strong> — wheelchairs, oxygen concentrators, <strong>infusion pumps</strong></td>
+<td><strong>The key rule</strong>: a drug that can only be given via DME falls under <strong>Part B</strong>, and Part D cannot cover it. CASE-001 / 002 / 014 in the library all failed here — an external infusion pump sent the whole request down the wrong benefit</td>
+</tr>
+<tr>
+<td>pharmacy benefit<br>medical benefit</td>
+<td><strong>Pharmacy benefit</strong> (goes through the prescription, dispensed by a pharmacy) vs <strong>medical benefit</strong> (goes through services — visits, supplies, coordination)</td>
+<td>Q4's <strong>first question</strong>: which benefit applies decides directly whether S-codes appear</td>
+</tr>
+<tr>
+<td>formulary</td>
+<td><strong>The formulary</strong> — the drugs this plan is willing to cover. A drug outside it can be requested as a <em>non-formulary exception</em> (an exception)</td>
+<td>That is how CASE-003 was approved. Q6's fourth denial reason</td>
+</tr>
+<tr>
+<td>step therapy</td>
+<td><strong>Step therapy</strong> — the cheaper first-line drug must be tried first; only after failure or intolerance is the expensive one approved</td>
+<td>The CMM asks "have you tried X" one drug at a time. <strong>The trap</strong>: X appearing in the medication history <em>does not mean</em> X failed. This is exactly "never convert likely into documented"</td>
+</tr>
+<tr>
+<td>quantity limit</td>
+<td><strong>A quantity limit</strong> — exceed it and the request is auto-denied or cut back</td>
+<td>CASE-008 failed here. Also part of §7's fifth check</td>
+</tr>
+<tr>
+<td>on-label<br>off-label</td>
+<td><strong>On-label / off-label use.</strong>An FDA-approved indication is on-label; using it for something else is off-label (legal and common, but reimbursement is another matter)</td>
+<td>Part D <strong>essentially only pays for on-label</strong>. So the rule is: for off-label, answer No honestly and flag it. <strong>Never dress it up</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>D · Clinical words the cases will throw at you</h3>
+
+<div class="tw">
+<table>
+<thead><tr><th style="width:26%">Term</th><th style="width:40%">What it is</th><th>Why this document mentions it</th></tr></thead>
+<tbody>
+<tr><td>culture &amp; sensitivity<br><span style="font-size:11px;color:var(--ink-3)">culture + sensitivity</span></td><td>Grow the bacteria from a patient sample, then test which antibiotics it is susceptible or resistant to</td><td>The core evidence for "why this expensive drug specifically"</td></tr>
+<tr><td>MRSA / Pseudomonas</td><td>Two common hard-to-treat organisms: methicillin-resistant Staphylococcus aureus / Pseudomonas aeruginosa</td><td>They map to <code>B95.62</code> / <code>B96.5</code>. Q2 is entirely about <strong>when they should be added at all</strong></td></tr>
+<tr><td>ID physician</td><td><strong>Infectious disease physician.</strong>The specialty that handles complicated infections</td><td>The CMM often asks whether an ID physician prescribed it — if so, approval goes more smoothly</td></tr>
+<tr><td>PICC / catheter-related infection</td><td>A peripherally inserted central catheter; and the catheter itself becoming infected</td><td>One of Q5's examples: <strong>catheter infection</strong> vs <strong>bacteraemia</strong>, and which should lead</td></tr>
+<tr><td>bacteremia<br><span style="font-size:11px;color:var(--ink-3)">bacteraemia</span></td><td>Bacteria found in the blood (systemic), as opposed to a local infection at the catheter site</td><td>Same example. The antibiotic is being given for the bloodstream infection, so that should lead</td></tr>
+<tr><td>cellulitis / abscess</td><td><strong>Cellulitis</strong> (diffuse subcutaneous infection) / <strong>abscess</strong> (a walled-off collection of pus, usually needing drainage)</td><td>Q5's third example. Drainage <strong>does not mean</strong> abscess — unless the physician wrote it down</td></tr>
+<tr><td>UTI / pyelonephritis</td><td><strong>urinary tract infection</strong> (<code>N39.0</code>) / <strong>pyelonephritis</strong> (<code>N10</code>, the infection having ascended to the kidney)</td><td>Q5's second example. However sick the patient is, however high the fever, <strong>if the chart says UTI, the code is N39.0</strong></td></tr>
+<tr><td>osteomyelitis<br><span style="font-size:11px;color:var(--ink-3)">osteomyelitis</span></td><td>Bone infection. Courses are typically long — six weeks and up</td><td>In experiment #1 the model produced an honest warning that osteomyelitis was not documented — and the eval scorer briefly graded that correct behaviour as a violation</td></tr>
+<tr><td>surgical site infection<br><span style="font-size:11px;color:var(--ink-3)">surgical site infection</span></td><td>Graded by <strong>depth</strong> into three: superficial incisional / deep incisional (reaching fascia or muscle) / organ-space</td><td><strong>The entirety of Q1.</strong>Depth decides between <code>T81.41/42/43</code>; if the chart does not state a depth, the code is <code>T81.49XA</code>. Drainage, debridement, nearby hardware — <strong>none of them prove depth</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>E · Process and compliance</h3>
+
+<div class="tw">
+<table>
+<thead><tr><th style="width:20%">Term</th><th style="width:42%">What it is</th><th>What it means for the engineering</th></tr></thead>
+<tbody>
+<tr><td>prior authorization<br><code>PA</code></td><td><strong>Prior authorization.</strong>Proving necessity to the insurer before an expensive therapy starts</td><td>What this whole project is about</td></tr>
+<tr><td>appeal</td><td><strong>An appeal.</strong>The next step after a denial, with a deadline — the letters in the library say 65 days</td><td>Denial letters state the denial reason, which is the raw material behind Q6's five</td></tr>
+<tr><td>expedited / urgent review</td><td><strong>Expedited review.</strong>Available when a delay would endanger health</td><td>A field on the CMM. Many cases in the library have it ticked</td></tr>
+<tr><td>CoverMyMeds<br><code>CMM</code></td><td>The most-used PA submission <strong>portal</strong>, and also the questionnaire inside it</td><td>The 21 CMM PDFs in the library are printouts of it. <strong>§6 is entirely about this</strong></td></tr>
+<tr><td><code>ePA</code> / <code>NCPDP</code></td><td><strong>Electronic prior authorization</strong> standards / the industry body that sets them</td><td><a href="#a1"><strong>The heart of assumption A1</strong></a>: whether electronic submission is possible decides the system boundary (see §9)</td></tr>
+<tr><td><code>PHI</code> / HIPAA</td><td><strong>Protected health information</strong> / the US health privacy law</td><td>Development runs on de-identified data only. A BAA is required before production</td></tr>
+<tr><td>Safe Harbor<br>de-identification</td><td>A de-identification method HIPAA recognises: strip the <strong>18 categories of identifier</strong> it names (name, date of birth, medical record number, address, phone, insurance ID and so on)</td><td>This is the method the case library used. <strong>Note</strong>: the SME's own README says that after automated de-identification a <strong>human privacy review is still required</strong> — which is why the privacy sweep is a whole block of work and not one find-and-replace</td></tr>
+<tr><td><code>BAA</code><br><span style="font-size:11px;color:var(--ink-3)">Business Associate Agreement</span></td><td><strong>Business Associate Agreement.</strong>The contract required before PHI goes to any vendor, model providers included</td><td>It sits in column S2 on the board. <strong>Until it is signed, not one byte of real patient data goes near a model</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="rule-card">
+<span class="tag">Self-test</span>
+<p>If you can say where each number on this line came from, this section has done its job:</p>
+<p style="font-family:var(--mono);font-size:12.5px;line-height:1.8;margin-top:10px">
+<code>SOC 07/24–09/03 (42 days) · Cefepime 2g vial IV q12h · Total Qty: 84 vials · J0692 ×336</code></p>
+<p style="margin-top:10px;font-size:15px;color:var(--ink-2)">Answers: 42 is the inclusive calendar day count; 84 is 2 doses/day × 42 days × ceil(2000÷2000) vials per dose; 336 is 4 units/dose × 84 doses, where the 4 is 2000mg ÷ J0692's 500mg unit. <strong>The diagnosis code is not on this line, because layer ④ does not exist and the project would rather leave a gap than guess.</strong></p>
+</div>
+
+<p class="footnote">
+The scope of this document is the engine — the 20 blocks in column S1 on the matrix board. The product boundary (deployment, multi-tenancy, portal integration, compliance) is out of scope; see the five assumptions in §9 and Q-01 through Q-06 on the board.<br>
+Authority: the SME's <em>PriorMD AI Workflow Reference</em> (the 12 rules) and her Q1–Q8 interview answers of 2026-08-11. Where they conflict, the later word governs. Baseline: 40/40 tests and 8 eval assertions, both green on 2026-08-26.
+</p>
+
+</div>
+</div>

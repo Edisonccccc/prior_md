@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PriorMD — the whole picture</title>
+<style>
+  :root{
+    --bg:#0f1117; --card:#1a1d27; --card2:#232736; --ink:#e8eaf0; --muted:#9aa1b5;
+    --accent:#5b8def; --green:#4cc38a; --amber:#e5b567; --red:#e5735b; --line:#2e3345;
+    --mono:'SF Mono',SFMono-Regular,Consolas,'Courier New',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);line-height:1.65;
+       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+       padding:0 20px 100px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto}
+  header{padding:64px 0 40px;border-bottom:1px solid var(--line);margin-bottom:12px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+  h1{font-size:clamp(30px,5vw,44px);line-height:1.12;letter-spacing:-.02em;margin-bottom:10px}
+  .sub{color:var(--muted);font-size:19px;max-width:60ch}
+  .stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .pill{font-family:var(--mono);font-size:11.5px;padding:6px 12px;border-radius:20px;
+        background:var(--card2);border:1px solid var(--line);color:var(--muted)}
+  .pill b{color:var(--green);font-weight:600}
+  .pill.warn b{color:var(--amber)}
+  section{padding:46px 0 6px;border-top:1px solid var(--line);margin-top:34px}
+  section:first-of-type{border-top:none}
+  .num{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.1em;margin-bottom:10px}
+  h2{font-size:26px;letter-spacing:-.015em;margin-bottom:8px;line-height:1.2}
+  .lede{color:var(--muted);font-size:17px;margin-bottom:24px;max-width:62ch}
+  p{margin-bottom:14px;max-width:64ch}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:12px}
+  .card h3{font-size:16.5px;margin-bottom:6px}
+  .card p:last-child{margin-bottom:0}
+  .card .tag{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+             color:var(--muted);display:block;margin-bottom:7px}
+  .card.ok{border-left:3px solid var(--green)}
+  .card.todo{border-left:3px solid var(--amber)}
+  .card.stop{border-left:3px solid var(--red)}
+  .card.info{border-left:3px solid var(--accent)}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  code{font-family:var(--mono);font-size:.86em;background:var(--card2);padding:2px 6px;border-radius:4px}
+  strong{color:#fff}
+  .tw{overflow-x:auto;margin-bottom:16px}
+  table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  tbody tr:last-child td{border-bottom:none}
+  .st{font-family:var(--mono);font-size:11px;white-space:nowrap}
+  .st.g{color:var(--green)} .st.a{color:var(--amber)} .st.r{color:var(--red)}
+  .flow{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+  .step{display:flex;gap:14px;align-items:flex-start;background:var(--card);
+        border:1px solid var(--line);border-left:3px solid var(--k);border-radius:8px;padding:13px 16px}
+  .step .n{font-family:var(--mono);font-size:12px;color:var(--k);flex:0 0 auto;padding-top:2px;min-width:74px}
+  .step .b{flex:1;min-width:0}
+  .step .b b{display:block;margin-bottom:2px}
+  .step .b span{color:var(--muted);font-size:14.5px}
+  ul{margin:0 0 14px 20px;color:var(--muted)}
+  li{margin-bottom:6px}
+  li strong{color:var(--ink)}
+  footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);
+         font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.8}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">PriorMD · the whole picture</div>
+  <h1>Teaching an AI to do<br>insurance prior authorization</h1>
+  <p class="sub">Written for an engineer with no medical background. What we are building, why it is shaped this way, what runs today, and what is still missing.</p>
+  <div class="stats">
+    <span class="pill">tests <b>40 / 40</b></span>
+    <span class="pill">evals <b>8 pass · 0 fail · 2 skip</b></span>
+    <span class="pill warn">layer ④ <b>not built</b></span>
+    <span class="pill">updated <b>2026-08-26</b></span>
+  </div>
+</header>
+
+<section>
+  <div class="num">§ 1</div>
+  <h2>What the business actually does</h2>
+  <p class="lede">In one line: translate a physician's chart into the format an insurer will pay against.</p>
+  <p>A patient goes home and needs six weeks of IV antibiotics. It costs tens of thousands of dollars. The insurer says: prove this money should be spent. That proof, plus the paperwork, is <strong>prior authorization</strong> — PA.</p>
+  <div class="grid">
+    <div class="card"><span class="tag">upstream</span><h3>The physician</h3><p>Writes the order — "Cefepime 2g IV q12h for 42 days" — informally, with the supporting facts scattered across a discharge summary and consult notes.</p></div>
+    <div class="card info"><span class="tag">the middle · what we are automating</span><h3>The PA specialist</h3><p>Reads everything, picks the diagnosis code, computes the quantities, and produces the request in a rigid format. She is our SME.</p></div>
+    <div class="card"><span class="tag">downstream</span><h3>The payer</h3><p>Recognises codes and exact numbers only. Wrong format or wrong code means denial, and the patient does not get the drug.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="num">§ 2</div>
+  <h2>Medical terms, translated for engineers</h2>
+  <p class="lede">Five words. Treat them as an external system's API contract.</p>
+  <div class="grid">
+    <div class="card"><h3><code>ICD-10</code></h3><p><strong>An enum of diagnoses.</strong> One code per condition. The payer approves against the code, so <em>choosing</em> it is where almost all the judgment in this system lives.</p></div>
+    <div class="card"><h3><code>J-code</code></h3><p><strong>The billing unit definition for an injectable.</strong> J0692 = cefepime, 1 unit per 500mg, so a 2g dose is 4 units. Pure multiplication.</p></div>
+    <div class="card"><h3>day supply</h3><p><strong>Days covered, both ends inclusive.</strong> 07/24 → 09/03 is 42 days, not 41. A classic off-by-one, with money attached.</p></div>
+    <div class="card"><h3>Part B / Part D</h3><p><strong>Two Medicare benefits with a hard boundary.</strong> Part D essentially pays only for FDA-approved uses; off-label gets an honest No. A drug given via an infusion pump is Part B, and Part D will deny it.</p></div>
+    <div class="card"><h3>CMM questionnaire</h3><p><strong>The payer's form.</strong> Mostly Yes/No — but it is a branching tree, and measured across 21 real forms, <strong>47% of questions are deliberately left blank</strong>.</p></div>
+  </div>
+  <div class="card"><span class="tag">that's all</span><p>Everything else (ORIF, I&amp;D, MRSA…) is chart content. The AI reads it; you do not have to memorise it.</p></div>
+</section>
+
+<section>
+  <div class="num">§ 3</div>
+  <h2>The product goal</h2>
+  <p class="lede">Input: a stack of chart PDFs. Output: one line that can be submitted as-is.</p>
+  <div class="card"><span class="tag">the deliverable · a "one-liner"</span>
+    <p style="font-family:var(--mono);font-size:13px;line-height:1.9">SOC 07/24/2026 – 09/03/2026 (42 days)<br>Cefepime 2g vial IV q12h · Total Qty: 84 vials · J0692 ×336<br>Daptomycin 500mg vial IV q24h · Total Qty: 42 vials · J0878 ×14,070<br>Dx: <span style="color:var(--red)">______________</span></p>
+  </div>
+  <p>That, plus the CMM questionnaire answers and a set of warning flags, is her entire output for a case. <strong>Three of the four parts are arithmetic. The fourth — the diagnosis code — decides approval,</strong> and it is deliberately left blank until the judgment layer exists.</p>
+  <div class="card info"><span class="tag">scope, confirmed by the SME 2026-08-03</span><p>A tool shared across multiple providers, doing <strong>medication adjudication</strong>: drug, quantity, J-codes, diagnosis code. Nursing codes and anything else that varies by institution are explicitly out of AI scope — the specialist adds those by hand.</p></div>
+</section>
+
+<section>
+  <div class="num">§ 4</div>
+  <h2>The core design insight</h2>
+  <p class="lede">This job is two completely different kinds of work, and they must be handled differently.</p>
+  <div class="grid">
+    <div class="card ok"><span class="tag">deterministic → plain code</span><h3>Dates, vial counts, unit conversion</h3><p>42 days × 2 doses/day × 4 units/dose = J0692 ×336. Anything a calculator can do never goes to the LLM. It has to be 100% correct, reproducible and testable.</p><p style="color:var(--green);font-size:14px"><strong>Status:</strong> done, and it reproduces her output character for character.</p></div>
+    <div class="card todo"><span class="tag">judgment → a constrained LLM call</span><h3>Reading the chart, choosing the code, spotting contradictions</h3><p>Example: the chart mentions orthopaedic hardware, and a "hardware infection" code exists — but the specialist deliberately avoids it, because under Part D that route runs into an FDA-approval problem. Same chart, two defensible codes, only one gets approved.</p><p style="color:var(--amber);font-size:14px"><strong>Status:</strong> not built. It now has what it was waiting for — see §6.</p></div>
+  </div>
+  <div class="card stop"><span class="tag">the second principle</span><h3>Zero trust</h3><p>The LLM's output is <strong>testimony, not fact</strong>. Every field must carry a quote from the source document; no quote and the pipeline halts. An honest "I don't know" passes with a warning. A fabricated value is stopped. That distinction is the pivot the whole design turns on.</p></div>
+</section>
+
+<section>
+  <div class="num">§ 5</div>
+  <h2>The architecture today</h2>
+  <p class="lede">Five layers. The LLM appears at two of them; everything between is code.</p>
+  <div class="flow">
+    <div class="step" style="--k:var(--amber)"><div class="n">① LLM</div><div class="b"><b>Extraction</b><span>Chart → JSON. Fills fields only, each with a source quote. No arithmetic, no code selection.</span></div></div>
+    <div class="step" style="--k:var(--green)"><div class="n">② code</div><div class="b"><b>Zero-trust validation</b><span><code>pipeline.py</code>. Missing quote, missing start date, or a frequency outside the whitelist → hard stop.</span></div></div>
+    <div class="step" style="--k:var(--green)"><div class="n">③ code</div><div class="b"><b>Deterministic calculation</b><span><code>pa_calc.py</code>. Builds a real administration schedule, then folds it into day supply, dose count, vials and J-code units — four independent numbers.</span></div></div>
+    <div class="step" style="--k:var(--red)"><div class="n">④ LLM · gap</div><div class="b"><b>Judgment</b><span>ICD route selection <em>and</em> CMM questionnaire answering. Neither exists. Both are designed; see the engine design doc.</span></div></div>
+    <div class="step" style="--k:var(--accent)"><div class="n">⑤ human</div><div class="b"><b>Specialist review</b><span>Worksheet → she approves or corrects → submits. Every correction flows back as a new exam question.</span></div></div>
+  </div>
+  <div class="card info"><span class="tag">cutting across all of it</span><h3>The eval set</h3><p>Every case she got right becomes a permanent exam question, scored automatically on five dimensions (extraction / calc / coding / format / safety). Nothing ships unless all of them stay green.</p></div>
+</section>
+
+<section>
+  <div class="num">§ 6</div>
+  <h2>What is built</h2>
+  <p class="lede">Zero to a running pipeline, then a real correctness rewrite.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Milestone</th><th>What it was</th><th>What came out of it</th></tr></thead>
+    <tbody>
+      <tr><td class="st g">07-30 · experiment #1</td><td>Rules as a prompt vs her answer, on a de-identified real case</td><td>A fresh LLM scored ~85%. All arithmetic right, and it even reproduced the hardware-code judgment. The three misses became the roadmap.</td></tr>
+      <tr><td class="st g">07-30 · calc layer</td><td><code>pa_calc.py</code></td><td>J-code lookup, date maths, vials and units, the one-liner template. Side effect: writing it as code exposed a self-contradiction in the reference document that prose had hidden.</td></tr>
+      <tr><td class="st g">07-30 · pipeline</td><td>Extraction prompt + zero-trust validator</td><td>End to end on a real case. The extractor even flagged "weight-based dosing but no weight documented" on its own. Every malformed JSON was caught at the gate.</td></tr>
+      <tr><td class="st g">07-30 · evals</td><td>Scorer + 2 seed cases</td><td>Five-dimension scoring — and a bug in the scorer itself, which had been failing cases for producing honest warnings. Evals are code too, and code is wrong sometimes.</td></tr>
+      <tr><td class="st g">08-03 · first ruling</td><td>One iMessage: nursing codes leave AI scope</td><td>Code deleted, prompt prohibition added, eval ban added, decision archived with her exact words. That four-part loop is now the template for every ruling.</td></tr>
+      <tr><td class="st g">08-26 · Q7 / Q8</td><td>Her vial-rounding and unusual-frequency answers, encoded</td><td>The vial rule was already right and was locked with tests <em>before</em> refactoring. The dose-count model was <strong>wrong</strong> and was replaced: schedules are now enumerated dose by dose, so q48h, weekly, loading doses and tapers all work without special cases. 20 tests → 40.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="num">§ 7</div>
+  <h2>What is still missing</h2>
+  <p class="lede">The two things that used to block everything have arrived. What blocks now is different.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Piece</th><th>Status</th><th>What it is waiting on</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Judgment layer</strong><br><span style="color:var(--muted);font-size:13.5px">ICD route selection — the hardest and most valuable part</span></td><td class="st a">📋 ready</td><td>No longer blocked. Her Q1/Q2/Q5 answers arrived 08-11 and 21 solved cases arrived 08-25.</td></tr>
+      <tr><td><strong>CMM answering layer</strong><br><span style="color:var(--muted);font-size:13.5px">A third of the output</span></td><td class="st r">🔴 unbuilt gap</td><td>Found 08-26: nothing generates, validates or scores the questionnaire answers. It is not part of the ICD layer — one classifies, the other substantiates.</td></tr>
+      <tr><td><strong>Case library → evals</strong></td><td class="st a">📋 ready</td><td>21 cases in hand. Two things did <em>not</em> arrive: the original referrals, and her "why I chose this" notes. Both have been asked for.</td></tr>
+      <tr><td><strong>Real model API</strong><br><span style="color:var(--muted);font-size:13.5px">LLM steps are run by hand today</span></td><td class="st a">📋 ready</td><td>Nothing blocks it.</td></tr>
+      <tr><td><strong>Review interface + PDF/OCR intake</strong></td><td class="st a">📋 ready</td><td>Nothing blocks it — though the shape of PDF intake is a guess until a real referral is seen.</td></tr>
+      <tr><td><strong>HIPAA compliance</strong><br><span style="color:var(--muted);font-size:13.5px">BAA, encryption, access control</span></td><td class="st r">before production</td><td>Sidestepped during development by using de-identified data only. Needs doing properly, with advice from someone who does it for a living.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="card stop"><span class="tag">the two unknowns that could make the design structurally wrong</span>
+    <p><strong>How does a finished PA reach the payer?</strong> Pasted into a portal by hand, or submitted electronically? The first means the deliverable is a worksheet a person copies from. The second needs a submission state machine, receipts and retries — a different system.</p>
+    <p><strong>What actually arrives at the start of a case?</strong> Not one real referral has been seen. The extraction contract and the PDF intake are both designed against guesswork.</p></div>
+</section>
+
+<section>
+  <div class="num">§ 8</div>
+  <h2>Plan and estimates</h2>
+  <p class="lede">Part time, two to three months to "she genuinely uses it every day".</p>
+  <div class="tw"><table>
+    <thead><tr><th>Phase</th><th>Contents</th><th>At 10–15h/week</th></tr></thead>
+    <tbody>
+      <tr><td class="st g">✅ P0 prototype</td><td>Feasibility, calculation layer, pipeline, eval harness</td><td>done</td></tr>
+      <tr><td>P1 usable MVP</td><td>Model API behind a thin abstraction, review interface, PDF/OCR intake</td><td>2–4 weeks</td></tr>
+      <tr><td>P2 judgment + evals</td><td>Case library → coding layer → CMM answering → eval to 90%+</td><td>3–6 weeks</td></tr>
+      <tr><td>P3 pilot</td><td>Real use; corrections flow back as exam questions; iterate</td><td>~4 weeks</td></tr>
+    </tbody>
+  </table></div>
+  <div class="grid">
+    <div class="card"><span class="tag">API cost</span><p>&lt;$50/month</p></div>
+    <div class="card"><span class="tag">hosting</span><p>$20–50/month</p></div>
+    <div class="card info"><span class="tag">the real cost</span><p><strong>Your time — roughly 100–150 hours.</strong></p></div>
+  </div>
+  <div class="card"><span class="tag">confidence</span><h3>85–90% for a specialist-in-the-loop copilot</h3>
+    <p>Grounded in: reproducing 85% of her work on day one, a calculation layer that is now provably correct against her own counter-examples, and a domain that turns out to be highly rule-shaped once she explains it.</p>
+    <p>The biggest risks are not technical. They are the SME's response time (the one hard bottleneck), the scan quality of real referrals, and format variation between payers. <strong>Deliberately not a goal:</strong> fully autonomous submission with no human review.</p></div>
+</section>
+
+<section>
+  <div class="num">§ 9</div>
+  <h2>Next actions</h2>
+  <div class="grid">
+    <div class="card info"><span class="tag">you</span><h3>Send the follow-up questions</h3><p><code>outbox/followup-questions-2026-08-25.html</code> — 13 questions, 3 of them starred. The two structural unknowns lead it.</p></div>
+    <div class="card todo"><span class="tag">her</span><h3>Referrals and judgment notes</h3><p>Five or six de-identified referrals, and one line of reasoning per case. Still the highest-leverage thing in the project.</p></div>
+    <div class="card ok"><span class="tag">you, while waiting</span><h3>Work the board</h3><p><code>matrix brief S1</code> prints the dependency waves. Nothing in wave 1 depends on her.</p></div>
+    <div class="card"><span class="tag">always</span><h3>Every ruling takes the 08-03 path</h3><p>Code or prompt change → a test → an eval assertion → the decision archived with who, when and her exact words.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="num">§ 10</div>
+  <h2>Where everything lives</h2>
+  <ul>
+    <li><code>README.md</code> — <strong>start here.</strong> What this is and how to run it.</li>
+    <li><code>AGENT.md</code> — the full handoff, for a person or an AI picking the project up cold.</li>
+    <li><code>docs/engine-design.html</code> — <strong>the system design.</strong> Data model, schedule model, the constraints on the judgment layer, the eval architecture. Six figures.</li>
+    <li><code>src/</code> · <code>prompts/</code> · <code>evals/</code> — the code, the prompts, the regression suite.</li>
+    <li><code>_matrix/plan.yaml</code> — the roadmap as code. <code>matrix handoff</code> reads it.</li>
+    <li><code>memory/sme_answers.md</code> — every ruling she has made, dated, in her words. <strong>This overrides the reference document.</strong></li>
+    <li><code>data/</code> — confidential, gitignored. Her source documents and the 21-case library.</li>
+  </ul>
+</section>
+
+<footer>
+  This page is the gentle version. <code>docs/engine-design.html</code> is the precise one.<br>
+  Updated 2026-08-26 · 40/40 tests · 8 evals green · layer ④ not built
+</footer>
+
+</div>
+</body>
+</html>

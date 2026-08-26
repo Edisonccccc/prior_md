@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PriorMD — A Few Follow-Ups</title>
+<style>
+:root{
+  --ink:#1c2333; --muted:#5d6678; --line:#e3e7f0; --line2:#c6cede;
+  --page:#f6f7fb; --card:#ffffff; --soft:#fbfcfe;
+  --blue:#3b6fe0; --blue-bg:#eaf0fd; --blue-line:#c9d4f5;
+  --green:#1f9d6b; --green-deep:#20543f; --green-bg:#e6f6ef;
+  --amber:#b97d16; --amber-bg:#fdf3e0; --amber-line:#f0dfb8;
+  --purple:#7a53c9; --purple-bg:#f1ebfb;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--page); color:var(--ink);
+  font-family:var(--sans); font-size:17px; line-height:1.62;
+  -webkit-font-smoothing:antialiased; padding:0 0 120px;
+}
+.wrap{max-width:780px; margin:0 auto; padding:0 20px}
+
+/* ---------- masthead ---------- */
+header{background:var(--card); border-bottom:1px solid var(--line); padding:38px 0 30px; margin-bottom:30px}
+.brand{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--green); font-weight:700; margin-bottom:14px}
+h1{font-size:clamp(28px,4.6vw,38px); line-height:1.14; margin:0 0 12px; letter-spacing:-.02em}
+header p{color:var(--muted); margin:0 0 6px; max-width:60ch; font-size:17px}
+
+/* ---------- how to answer ---------- */
+.howto{background:var(--blue-bg); border:1px solid var(--blue-line); border-radius:10px;
+  padding:20px 22px; margin:0 0 34px}
+.howto h2{font-size:17px; margin:0 0 10px; color:var(--blue)}
+.howto ol{margin:0; padding-left:22px}
+.howto li{margin-bottom:7px}
+.howto li:last-child{margin-bottom:0}
+
+/* ---------- parts ---------- */
+.part{margin:0 0 12px; padding-top:30px; border-top:2px solid var(--ink)}
+.part h2{font-size:22px; margin:0 0 4px; letter-spacing:-.01em}
+.part .why{color:var(--muted); font-size:15.5px; margin:0 0 22px; max-width:62ch}
+
+/* ---------- questions ---------- */
+.q{background:var(--card); border:1px solid var(--line); border-radius:10px;
+  padding:20px 22px 18px; margin:0 0 16px}
+.q.key{border-color:var(--amber-line); background:var(--amber-bg)}
+.qhead{display:flex; gap:11px; align-items:baseline; margin-bottom:6px}
+.qnum{flex:0 0 auto; font-family:var(--mono); font-size:13px; font-weight:700; color:var(--green);
+  background:var(--green-bg); border-radius:5px; padding:2px 8px}
+.q.key .qnum{color:var(--amber); background:#fff}
+.qtext{font-size:17.5px; font-weight:600; line-height:1.4}
+.star{color:var(--amber); font-size:14px; letter-spacing:.03em; font-weight:700; white-space:nowrap}
+.qwhy{color:var(--muted); font-size:15px; margin:0 0 15px; max-width:60ch}
+.opts{margin:0 0 12px; padding:0; list-style:none}
+.opts li{margin-bottom:2px}
+.opts label{display:flex; gap:10px; align-items:flex-start; padding:7px 10px; border-radius:7px;
+  cursor:pointer; font-size:16px}
+.opts label:hover{background:var(--soft)}
+.opts input{margin:5px 0 0; flex:0 0 auto; width:17px; height:17px; accent-color:var(--green)}
+textarea{width:100%; min-height:76px; font-family:var(--sans); font-size:16px; line-height:1.55;
+  color:var(--ink); background:var(--soft); border:1px solid var(--line2); border-radius:8px;
+  padding:11px 13px; resize:vertical}
+textarea::placeholder{color:#9aa3b5}
+textarea:focus{outline:2px solid var(--blue); outline-offset:1px; background:#fff}
+
+/* ---------- closing ---------- */
+.note{background:var(--purple-bg); border-left:4px solid var(--purple); border-radius:0 8px 8px 0;
+  padding:18px 22px; margin:30px 0}
+.note h3{margin:0 0 8px; font-size:16.5px; color:var(--purple)}
+.note p{margin:0; font-size:16px; color:var(--muted)}
+.thanks{background:var(--green-bg); border:1px solid #bfe6d4; border-radius:10px;
+  padding:22px 24px; margin:26px 0 0}
+.thanks p{margin:0 0 10px}
+.thanks p:last-child{margin:0}
+
+/* ---------- JS-only helper bar ---------- */
+#bar{display:none; position:fixed; left:0; right:0; bottom:0; background:var(--card);
+  border-top:1px solid var(--line2); padding:12px 20px; z-index:9;
+  box-shadow:0 -3px 14px rgba(28,35,51,.09)}
+#bar .in{max-width:780px; margin:0 auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+#bar span{color:var(--muted); font-size:14.5px; margin-right:auto}
+button{font-family:var(--sans); font-size:15.5px; font-weight:600; padding:10px 18px;
+  border-radius:8px; border:1px solid var(--green); background:var(--green); color:#fff; cursor:pointer}
+button.ghost{background:#fff; color:var(--green)}
+button:hover{filter:brightness(1.06)}
+button:focus-visible{outline:2px solid var(--blue); outline-offset:2px}
+#out{display:none; width:100%; min-height:220px; margin-top:10px; font-family:var(--mono); font-size:13px}
+
+@media print{
+  body{background:#fff; padding:0}
+  #bar{display:none !important}
+  .q,.howto,.thanks,.note{break-inside:avoid; box-shadow:none}
+  textarea{min-height:64px; background:#fff}
+}
+@media (max-width:520px){ body{font-size:16px} .q{padding:16px 16px 14px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">PriorMD</div>
+    <h1>A few follow-ups</h1>
+    <p>Your interview answers were exactly what I needed — the vial rule caught a real mistake in how I'd built the dose counting, and the unusual-frequency examples rewrote a whole piece of the design.</p>
+    <p>These are the questions those answers opened up. <strong>Thirteen, and three of them matter far more than the rest.</strong> No rush at all.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+<div class="howto">
+  <h2>Answer whichever way is easiest</h2>
+  <ol>
+    <li><strong>Type right in this page</strong> — open it in a browser, fill in the boxes, then hit <em>Copy my answers</em> at the bottom and paste into an email.</li>
+    <li><strong>Print it</strong> and write on it.</li>
+    <li><strong>Just reply to my email</strong> with the question numbers — “1) …  4) …” is perfectly fine.</li>
+  </ol>
+</div>
+
+<!-- ============ PART 1 ============ -->
+<section class="part">
+  <h2>Part 1 · How a PA actually gets submitted</h2>
+  <p class="why">This is the one I most need. It decides what I'm building toward: a clean worksheet you copy from, versus something that submits and tracks the response itself. Those are very different tools.</p>
+</section>
+
+<div class="q key">
+  <div class="qhead"><span class="qnum">1</span><span class="qtext">When a PA is ready to go, how does it actually reach the plan? <span class="star">★ KEY</span></span></div>
+  <p class="qwhy">Check everything that happens in a typical week — it's fine if it varies by payer.</p>
+  <ul class="opts">
+    <li><label><input type="checkbox" data-q="1"><span>I type it into the CoverMyMeds portal by hand</span></label></li>
+    <li><label><input type="checkbox" data-q="1"><span>I type it into a different payer portal by hand</span></label></li>
+    <li><label><input type="checkbox" data-q="1"><span>The portal sends it electronically once I hit submit</span></label></li>
+    <li><label><input type="checkbox" data-q="1"><span>Fax</span></label></li>
+    <li><label><input type="checkbox" data-q="1"><span>Phone call</span></label></li>
+    <li><label><input type="checkbox" data-q="1"><span>It depends on the payer</span></label></li>
+  </ul>
+  <textarea data-q="1" placeholder="Anything else about how it goes out…"></textarea>
+</div>
+
+<div class="q">
+  <div class="qhead"><span class="qnum">2</span><span class="qtext">How do you find out the decision?</span></div>
+  <p class="qwhy">I want to know whether an outcome comes back to the same place you submitted from, or arrives separately days later.</p>
+  <ul class="opts">
+    <li><label><input type="checkbox" data-q="2"><span>It shows up in the portal</span></label></li>
+    <li><label><input type="checkbox" data-q="2"><span>A letter in the mail</span></label></li>
+    <li><label><input type="checkbox" data-q="2"><span>Fax</span></label></li>
+    <li><label><input type="checkbox" data-q="2"><span>Phone call</span></label></li>
+    <li><label><input type="checkbox" data-q="2"><span>I have to go check on it myself</span></label></li>
+  </ul>
+  <textarea data-q="2" placeholder="How long does it usually take?"></textarea>
+</div>
+
+<div class="q">
+  <div class="qhead"><span class="qnum">3</span><span class="qtext">Is any part of this automated today, or is every step you clicking?</span></div>
+  <p class="qwhy">If any software already talks to the payer for you, I should build alongside it rather than around it.</p>
+  <textarea data-q="3" placeholder="Any software or service in the loop today…"></textarea>
+</div>
+
+<!-- ============ PART 2 ============ -->
+<section class="part">
+  <h2>Part 2 · What arrives at the start of a case</h2>
+  <p class="why">I've seen what you <em>submit</em> — the 21 CoverMyMeds files. I've never seen what you <em>receive</em>. Right now I can check whether the system fills the form out correctly, but not whether it reads the incoming paperwork correctly, and that's half the job.</p>
+</section>
+
+<div class="q key">
+  <div class="qhead"><span class="qnum">4</span><span class="qtext">What's usually in a new referral? <span class="star">★ KEY</span></span></div>
+  <p class="qwhy">Check what's typically there. I'm especially curious what's <em>often missing</em> and has to be chased.</p>
+  <ul class="opts">
+    <li><label><input type="checkbox" data-q="4"><span>Signed order / prescription</span></label></li>
+    <li><label><input type="checkbox" data-q="4"><span>H&amp;P or progress notes</span></label></li>
+    <li><label><input type="checkbox" data-q="4"><span>Culture &amp; sensitivity results</span></label></li>
+    <li><label><input type="checkbox" data-q="4"><span>Infectious disease consult note</span></label></li>
+    <li><label><input type="checkbox" data-q="4"><span>Face sheet / insurance information</span></label></li>
+    <li><label><input type="checkbox" data-q="4"><span>Discharge summary</span></label></li>
+    <li><label><input type="checkbox" data-q="4"><span>Something else</span></label></li>
+  </ul>
+  <textarea data-q="4" placeholder="What's most often missing and has to be chased down?"></textarea>
+</div>
+
+<div class="q">
+  <div class="qhead"><span class="qnum">5</span><span class="qtext">How does it reach you, and in what shape?</span></div>
+  <p class="qwhy">Scanned pages and typed pages are completely different problems for software to read.</p>
+  <ul class="opts">
+    <li><label><input type="checkbox" data-q="5"><span>Fax</span></label></li>
+    <li><label><input type="checkbox" data-q="5"><span>Secure email</span></label></li>
+    <li><label><input type="checkbox" data-q="5"><span>An EMR or referral portal</span></label></li>
+    <li><label><input type="checkbox" data-q="5"><span>Shared drive or file link</span></label></li>
+    <li><label><input type="checkbox" data-q="5"><span>Paper</span></label></li>
+    <li><label><input type="checkbox" data-q="5"><span>Mostly scanned images</span></label></li>
+    <li><label><input type="checkbox" data-q="5"><span>Mostly real typed text</span></label></li>
+  </ul>
+</div>
+
+<div class="q">
+  <div class="qhead"><span class="qnum">6</span><span class="qtext">Roughly how many pages, and is it one file or several?</span></div>
+  <p class="qwhy">A rough range is plenty — “usually 8–30 pages, sometimes one big PDF, sometimes five.”</p>
+  <textarea data-q="6" placeholder="Typical size and how it's split up…"></textarea>
+</div>
+
+<div class="q key">
+  <div class="qhead"><span class="qnum">7</span><span class="qtext">Could you send five or six de-identified referrals? <span class="star">★ KEY</span></span></div>
+  <p class="qwhy">Honestly the single most useful thing you could give me right now. They don't need to be interesting cases — ordinary ones are better. Same de-identification you used for the case library.</p>
+  <textarea data-q="7" placeholder="Yes / no / what would make this easier…"></textarea>
+</div>
+
+<!-- ============ PART 3 ============ -->
+<section class="part">
+  <h2>Part 3 · The 21 cases you already sent</h2>
+  <p class="why">Those came through in good shape and the de-identification looks solid. Two things from your own description weren't in the package — I suspect they just didn't get bundled.</p>
+</section>
+
+<div class="q">
+  <div class="qhead"><span class="qnum">8</span><span class="qtext">Do the original referrals still exist for those 21 cases?</span></div>
+  <p class="qwhy">Pairing a referral with the submission you built from it is worth more than either one alone — it shows the whole reasoning, not just the result.</p>
+  <textarea data-q="8" placeholder="Available / not kept / would take some digging…"></textarea>
+</div>
+
+<div class="q key">
+  <div class="qhead"><span class="qnum">9</span><span class="qtext">The short “why I chose this” notes <span class="star">★ KEY</span></span></div>
+  <p class="qwhy">You mentioned including a note for cases with a judgment call. Those didn't come through, and they're the most valuable part — the reasoning is what I'm trying to teach the system, not the final answer. <strong>One line per case is plenty.</strong> Even just the ten hardest.</p>
+  <textarea data-q="9" placeholder="Could you add these? Any format is fine — a list, a voice memo, notes in an email…"></textarea>
+</div>
+
+<!-- ============ PART 4 ============ -->
+<section class="part">
+  <h2>Part 4 · Scope</h2>
+  <p class="why">Three quick ones that shape how wide I build.</p>
+</section>
+
+<div class="q">
+  <div class="qhead"><span class="qnum">10</span><span class="qtext">Any medication that needs a PA, or stay focused on home infusion anti-infectives?</span></div>
+  <p class="qwhy">The case library is broader than I expected — alongside the IV antibiotics there's Leqembi, Kisunla, Gammagard, zoledronic acid, milrinone. That changes how I build the drug and billing-code lookup underneath, so I'd rather ask than guess.</p>
+  <ul class="opts">
+    <li><label><input type="checkbox" data-q="10"><span>Any medication that needs a prior authorization</span></label></li>
+    <li><label><input type="checkbox" data-q="10"><span>Home infusion anti-infectives first, widen later</span></label></li>
+    <li><label><input type="checkbox" data-q="10"><span>Home infusion generally, including the non-antibiotic drugs</span></label></li>
+  </ul>
+  <textarea data-q="10" placeholder="Where would you want it to start?"></textarea>
+</div>
+
+<div class="q">
+  <div class="qhead"><span class="qnum">11</span><span class="qtext">Who else would end up using this?</span></div>
+  <p class="qwhy">Whether it's one shared queue or separate setups per provider changes the plumbing quite a bit.</p>
+  <ul class="opts">
+    <li><label><input type="checkbox" data-q="11"><span>Just me, for now</span></label></li>
+    <li><label><input type="checkbox" data-q="11"><span>A few people at my company working the same queue</span></label></li>
+    <li><label><input type="checkbox" data-q="11"><span>Separate providers, each with their own setup and preferences</span></label></li>
+  </ul>
+  <textarea data-q="11" placeholder="How you picture it being used…"></textarea>
+</div>
+
+<div class="q">
+  <div class="qhead"><span class="qnum">12</span><span class="qtext">Roughly how many PAs in a typical week?</span></div>
+  <p class="qwhy">A ballpark is fine. Five a week and fifty a day are different machines.</p>
+  <textarea data-q="12" placeholder="Rough number, and how much of your day it takes…"></textarea>
+</div>
+
+<div class="q">
+  <div class="qhead"><span class="qnum">13</span><span class="qtext">Anything I should be asking and haven't?</span></div>
+  <p class="qwhy">You've caught two real mistakes in my thinking already. If something about how I'm framing this looks off to you, I'd rather hear it now.</p>
+  <textarea data-q="13" placeholder="Anything at all…"></textarea>
+</div>
+
+<div class="note">
+  <h3>One small heads-up — no answer needed</h3>
+  <p>The first page of CASE-002 still shows a “Logged in as [name]” line in the portal header. It's not patient information, so nothing urgent, and I'll scrub it on my copy. Just flagging it in case that same header turns up in anything else you share out.</p>
+</div>
+
+<div class="thanks">
+  <p><strong>Thank you again.</strong> The last set of answers changed the design in three separate places — the vial calculation, the way unusual dosing schedules are counted, and how the system is allowed to pick a diagnosis code at all.</p>
+  <p>No deadline on any of this. Questions <strong>1, 4, 7 and 9</strong> are the ones worth your time if you only have a few minutes.</p>
+</div>
+
+</div>
+
+<div id="bar">
+  <div class="in">
+    <span>Done? Collect everything you've typed:</span>
+    <button type="button" id="copy">Copy my answers</button>
+    <button type="button" class="ghost" id="dl">Save as a file</button>
+    <textarea id="out" readonly aria-label="Your collected answers"></textarea>
+  </div>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('bar'); bar.style.display='block';
+  document.body.style.paddingBottom='140px';
+
+  function collect(){
+    var out=['PriorMD — follow-up answers',''], seen={};
+    document.querySelectorAll('.q').forEach(function(q){
+      var n=q.querySelector('.qnum').textContent.trim();
+      var t=q.querySelector('.qtext').textContent.replace('★ KEY','').trim();
+      var picked=[];
+      q.querySelectorAll('input[type=checkbox]:checked').forEach(function(c){
+        picked.push(c.parentNode.querySelector('span').textContent.trim());
+      });
+      var ta=q.querySelector('textarea');
+      var note=ta?ta.value.trim():'';
+      if(!picked.length && !note) return;
+      out.push(n+') '+t);
+      if(picked.length) out.push('   ['+picked.join(' | ')+']');
+      if(note) out.push('   '+note.replace(/\n/g,'\n   '));
+      out.push('');
+    });
+    if(out.length<3) out.push('(nothing filled in yet)');
+    return out.join('\n');
+  }
+
+  document.getElementById('copy').addEventListener('click',function(){
+    var txt=collect(), btn=this;
+    function ok(){ btn.textContent='Copied ✓'; setTimeout(function(){btn.textContent='Copy my answers';},2200); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok, show);
+    } else { show(); }
+    function show(){
+      var o=document.getElementById('out');
+      o.style.display='block'; o.value=txt; o.select();
+      btn.textContent='Select all and copy ↓';
+    }
+  });
+
+  document.getElementById('dl').addEventListener('click',function(){
+    var b=new Blob([collect()],{type:'text/plain'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(b); a.download='priormd-answers.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  });
+})();
+</script>
+</body>
+</html>
