@@ -1,26 +1,36 @@
 {
-  "description": "Aztreonam for chronic sinusitis (J32.9) — the one-liner example from the reference doc, Part 1 Rule 2. Calc/format-only eval (no full referral text available yet).",
+  "description": "Aztreonam for chronic sinusitis (J32.9) \u2014 the one-liner example from the reference doc, Part 1 Rule 2. Calc/format-only eval (no full referral text available yet).",
   "source": "PriorMD AI Workflow Reference.docx, Part 1, one-liner example",
-  "payer_type": "unknown",
+  "payer_type": "home infusion (medical benefit)",
   "difficulty": "mechanical",
-
   "calc": {
     "start": "2026-07-07",
     "end": "2026-08-03",
     "day_supply": 28,
     "drugs": [
-      { "drug_name": "Aztreonam", "dose_mg": 2000, "vial_size_mg": 2000, "frequency": "q8h",
-        "total_vials": 84, "jcode": "J0834", "jcode_units": 336 }
+      {
+        "drug_name": "Aztreonam",
+        "dose_mg": 2000,
+        "vial_size_mg": 2000,
+        "frequency": "q8h",
+        "total_vials": 84,
+        "jcode": "J0834",
+        "jcode_units": 336
+      }
     ]
   },
-
-  "icd_codes": ["J32.9"],
-  "service_codes": [["S9502", 28]],
-
-  "one_liner": "Services Requested: Aztreonam 2g vial IV q8h (Dose: 2g, Total Qty: 84 vials) – J0834 x336, S9502 x28 for J32.9 Dates of Service: 07/07/2026 to 08/03/2026 (28 day supply).",
-
+  "icd_codes": [
+    "J32.9"
+  ],
+  "service_codes": [
+    [
+      "S9502",
+      28
+    ]
+  ],
+  "one_liner": "Services Requested: Aztreonam 2g vial IV q8h (Dose: 2g, Total Qty: 84 vials) \u2013 J0834 x336, S9502 x28 for J32.9 Dates of Service: 07/07/2026 to 08/03/2026 (28 day supply).",
   "required_flags": [],
-  "forbidden_in_output": ["99601", "99602"],
-
-  "judgment_notes": "RESOLVED 2026-08-03 by SME: the doc's nursing figures (Rule 8 x5/x10 vs this example's x4/x8) were examples only — units vary by service dates/day supply and by provider. SME instructed removing nursing coding from the AI workflow entirely; tool scope is medication adjudication. Expected output updated to exclude 99601/99602, and they are now forbidden_in_output. If a specific provider needs them, the specialist adds them manually."
+  "forbidden_in_output": [],
+  "judgment_notes": "SUPERSEDED 2026-10-13. The 2026-08-03 reading of the SME's instruction was applied too widely here. This case carries S9502 x28 \u2014 a per-diem code \u2014 which makes it a home-infusion medical-benefit submission, precisely the workflow where she says nursing codes \"absolutely still matter\". Banning 99601/99602 on THIS case was therefore backwards, and the ban has been removed. Her 2026-10-13 words: \"when I previously said nursing codes and per diem codes should not be included, I was talking about medication only Part D or CMM submissions. I do not want those codes removed from the entire system.\" The expected one-liner is unchanged, because it reproduces the reference doc's Rule 2 example verbatim and that example carries no nursing codes. What changed is that their absence is no longer asserted as a rule: the doc's nursing figures were examples (units vary by service dates, day supply and provider), so this eval asserts the per-diem code and stays silent on nursing units rather than forbidding them. PRIOR NOTE, 2026-08-03, kept for the trail: the doc's nursing figures (Rule 8 x5/x10 vs this example's x4/x8) were examples only; the AI does not calculate nursing units. That half of the ruling still stands.",
+  "submission_type": "medical_benefit"
 }

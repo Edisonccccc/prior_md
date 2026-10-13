@@ -34,8 +34,17 @@
   submission-ready prior-authorization outputs (the "PA one-liner", CMM questionnaire
   answers, and warning flags), with the specialist reviewing everything before submission.
   **Scope per SME (2026-08-03): medication adjudication** — drug, quantity, J-codes,
-  diagnosis codes. Multi-provider tool. Provider-specific extras (nursing codes, per-diems)
-  are manual, not AI outputs. Full autonomy (no human review) is explicitly a non-goal.
+  diagnosis codes. Multi-provider tool. Full autonomy (no human review) is explicitly a non-goal.
+  **Nursing codes and per-diems are SCOPED, not excluded (SME 2026-10-13, narrowing her own
+  08-03 instruction):** they stay off a medication-only Part D / CMM submission and belong on a
+  home-infusion medical-benefit authorization, where "those codes absolutely still matter". The
+  AI still never calculates nursing units — the specialist supplies them. See
+  `screen_service_codes()` in `src/pa_calc.py`.
+- **Her one-line definition of the product (SME 2026-10-13)** — the north star, in her words:
+  *"Is this ready to submit or not? If it is ready, give me what I need... If it is not ready,
+  tell me exactly what is missing, why I need it, and what I need to go back and get from the
+  provider."* Everything else is in service of that sentence. Note the second half is an output
+  in its own right, not an error path.
 
 ## 2. Domain primer (30 seconds)
 
@@ -186,13 +195,27 @@ Only dependency: pytest (`pip install pytest`).
 
 - Q1: why T81.49XA over T81.42XA (general default or case-specific?)
 - Q2: why L08.9 secondary instead of documented organism codes (B96.5/B95.62)?
-- Q3: ~~nursing units~~ **ANSWERED 08-03** (removed from scope)
+- Q3: ~~nursing units~~ **ANSWERED 08-03, NARROWED 10-13** — not removed from the system; scoped
+  to medical-benefit submissions. The AI never calculates the units. See `screen_service_codes()`.
 - Q4: when do per-diem codes (S9500/S9501/S9502) go into the one-liner?
 - Q5: more "diagnosis route" examples like the hardware call
 - Q6: top denial reasons (→ pre-submission checks)
 - Q7: vial rounding / wastage (JW modifier) rules
 - Q8: unusual frequencies: q48h, weekly (dalbavancin), loading+maintenance, tapers
-- Case library: 10–20 solved cases (referral + final output + payer response), redacted
+- Case library: 10-20 solved cases (referral + final output + payer response), redacted
+  — **arrived 08-25 WITHOUT the referrals; confirmed 10-13 that none exist to send.** The
+  extraction layer therefore has no real input to be measured against. The highest-value ask
+  outstanding is **one** real de-identified referral packet, not twenty-one. See board Q-05.
+
+**Answers returned 2026-10-13** (`PriorMD_QuestionnaireAnswers.docx` — **not yet filed; drop it
+into `data/sme-source/`**, which is gitignored). Logged verbatim in
+`memory/sme_answers.md` and assessed in `docs/sme-reply-2026-10-13.html`. What they changed:
+A1 settled (manual portal submission for v1; output must be "clean, paste ready"); A4 settled as
+description (a referral is the full medical record, "hundreds of pages long") but still unevidenced;
+A5 overturned (no built-in drug list — research the medication at runtime from CMS, FDA labeling,
+DailyMed, PrescriberPoint, manufacturer PI); CMM blanks are four states, not three; ICD selection
+must tolerate non-verbatim provider wording while still refusing unsupported codes. New open
+questions on the board: Q-07 (the fourth CMM state) and Q-08 (runtime drug research vs never-guess).
 
 ## 9. IMMEDIATE NEXT TASK — process `data/`
 

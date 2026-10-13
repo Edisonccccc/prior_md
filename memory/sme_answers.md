@@ -5,6 +5,82 @@ type: project
 ---
 Log of SME (PA Specialist) decisions, newest first. These override the original reference doc.
 
+## 2026-10-13 — Returned questionnaire (`PriorMD_QuestionnaireAnswers.docx`)
+
+Source: her written answers to the follow-up form sent 2026-08-26. 17,194 characters,
+no attachments. The five referral packets she describes (Ocrevus, Remicade/Infliximab,
+Tygacil/Tigecycline, Daptomycin, Ertapenem) were NOT included and are not available —
+Edison, 2026-10-13: "that is all i have". Treat the prose descriptions as the only
+evidence about referral shape. See Q-01 / Q-05.
+
+### A1 — Submission mode: RESOLVED, manual for v1
+> "For the first version, I'm okay with the PA specialist still manually submitting
+>  through CoverMyMeds or whatever payer portal they are using. I really just need the
+>  AI to organize everything correctly and give us the answers in a clean, paste ready way."
+
+Consequence: no portal automation in S1. "Paste ready" is a hard output requirement, not
+a nicety — the one-liner and the CMM answers must be copyable field by field.
+
+### A4 — Referral shape: RESOLVED, and much larger than assumed
+A referral is the whole medical record: physician order, progress notes, hospital records,
+discharge notes, specialist notes, labs, cultures, medication history, diagnosis, demographics,
+insurance. "sometimes one big PDF and sometimes several different documents."
+On the Ertapenem case: **"The original referral is hundreds of pages long."**
+
+Consequence: layer 1 is a needle-in-haystack retrieval problem over hundreds of pages, not a
+single-document parse. The design doc's assumption of a compact referral is wrong.
+
+### Nursing / per-diem codes — she NARROWED her 2026-08-03 ruling  [ENCODED 2026-10-13]
+> "when I previously said nursing codes and per diem codes should not be included, I was
+>  talking about medication only Part D or CMM submissions. I do not want those codes removed
+>  from the entire system. For home infusion and medical benefit authorizations, those codes
+>  absolutely still matter. They just need to be handled in the correct workflow and not
+>  thrown into every medication PA."
+
+We had encoded the 08-03 instruction as a GLOBAL ban and had a test enforcing it. Fixed:
+`SubmissionType` (medication_only / medical_benefit / undetermined), `screen_service_codes()`,
+`submission_type_for_payer()` in `pa_calc.py`; pipeline derives the benefit from the extracted
+payer and reports anything withheld as a flag; system prompt rule 8 rewritten; 9 scoped tests
+replace the single global one. **case-002's ban was removed — that case carries S9502, a
+per-diem code, so it is a medical-benefit case and was the wrong place for the ban.**
+case-001 keeps it, now justified by Part D rather than by a global rule.
+Still in force from 08-03: the AI never CALCULATES nursing units.
+
+### CMM blanks are FOUR states, not three
+> "It needs to understand the difference between a question that was never triggered,
+>  a question that does not apply, and a question that actually needs an answer but the
+>  chart does not support it."
+
+Our design had Answered / NotApplicable / Unsupported. She splits NotApplicable in two:
+never-triggered (conditional branch not reached) vs does-not-apply (reached, but not relevant
+to this patient). Design doc section on the CMM questionnaire needs the fourth state.
+
+Bigger ask in the same answer: "look at the patient's clinicals and help us determine if the
+patient meets the payer's criteria before we even get all the way through the submission."
+That is a pre-submission readiness verdict, earlier in the flow than our current output.
+
+### No hand-maintained drug list — research the drug at runtime  (overturns A5 / Q-02)
+> "I do not really want to design this around a certain number of medications or build a
+>  small drug list into the system... I want the AI to be able to research the medication
+>  when the case comes in."
+
+Named sources: CMS, FDA labeling, DailyMed, PrescriberPoint, manufacturer prescribing
+information. Consequence: `JCODE_TABLE`'s four hand-written rows are a stopgap, not the design.
+Needs a retrieval-with-citation layer, which collides head-on with "never guess" — see Q-08.
+
+### ICD selection — wording latitude, but still no invention
+> "Providers do not always document things using the exact ICD description."
+
+So verbatim chart wording cannot be required for a code to be selected. The grounding rule has
+to allow clinical synonymy while still refusing unsupported codes. She adds a second output:
+the system must say **what is missing and what documentation would unlock a stronger diagnosis**.
+
+### Her one-line definition of the product — better than our north star
+> "Is this ready to submit or not? If it is ready, give me what I need... If it is not ready,
+>  tell me exactly what is missing, why I need it, and what I need to go back and get from
+>  the provider."
+
+
 ## 2026-08-03 — Nursing codes removed from AI workflow (answers interview Q3)
 Via iMessage: the doc's nursing figures (Rule 8 table AND the Aztreonam example) were EXAMPLES, not rules — units vary by service dates/day supply of the medication dispensed, mostly weekly. Instruction: "remove the nursing coding from the ai workflow" — it won't apply universally to every provider; most users will use the tool mainly for MEDICATION ADJUDICATION.
 

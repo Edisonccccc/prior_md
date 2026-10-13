@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from enum import Enum
 from datetime import date, timedelta
 
 # ---------------------------------------------------------------------------
@@ -31,14 +32,114 @@ JCODE_TABLE: dict[str, tuple[str, float]] = {
     # Add a new drug as one line here. A drug that is absent gets flagged,
     # never invented.
 }
+# STOPGAP, not the design. SME 2026-10-13: "I do not really want to design this
+# around a certain number of medications or build a small drug list into the
+# system... I want the AI to be able to research the medication when the case
+# comes in" — from CMS, FDA labeling, DailyMed, PrescriberPoint and the
+# manufacturer's prescribing information. These four rows cover the eval suite
+# and nothing more; do not grow this table as if it were the plan. The open
+# question is how retrieved billing data passes the zero-trust gate at all,
+# since a J-code read off a web page is testimony, not a calculation. Board Q-08.
 
-# Nursing codes (99601/99602) were removed from the AI workflow on the SME's
-# instruction, 2026-08-03:
-#    "those are examples and it varies by service dates/day supply...
-#     remove the nursing coding from the ai workflow — it will not apply
-#     universally to every provider; the tool is mainly for medication adjudication."
-#    If a provider needs nursing codes, the specialist adds them to
-#    service_codes by hand. The AI does not calculate them.
+# Nursing codes (99601/99602) and per-diem codes (S9500/S9501/S9502) are
+# SCOPED TO THE BENEFIT, not banned outright. SME, 2026-10-13, narrowing her
+# own 2026-08-03 instruction:
+#    "when I previously said nursing codes and per diem codes should not be
+#     included, I was talking about medication only Part D or CMM submissions.
+#     I do not want those codes removed from the entire system. For home
+#     infusion and medical benefit authorizations, those codes absolutely
+#     still matter. They just need to be handled in the correct workflow and
+#     not thrown into every medication PA."
+#
+# What survives from 2026-08-03 is the narrower claim she has not retracted:
+# the AI never CALCULATES nursing units, because they vary by service dates,
+# day supply and provider. The specialist supplies them; this layer decides
+# only whether the submission in hand is one they belong on.
+#
+# See screen_service_codes() below.
+
+class SubmissionType(str, Enum):
+    """Which authorization this one-liner is being written for.
+
+    The nursing / per-diem rule depends on it, so the pipeline is not allowed
+    to leave it implied. UNDETERMINED is a first-class state rather than a
+    default, for the same reason an unrecognised drug is flagged instead of
+    guessed: the benefit decides what belongs in the output, so an unknown
+    benefit produces a flag, never an assumption.
+    """
+    MEDICATION_ONLY = "medication_only"   # Part D / CMM coverage determination
+    MEDICAL_BENEFIT = "medical_benefit"   # home infusion, Part B / commercial medical
+    UNDETERMINED = "undetermined"
+
+
+NURSING_CODES = frozenset({"99601", "99602"})
+PER_DIEM_CODES = frozenset({"S9500", "S9501", "S9502"})
+
+# Codes that belong on a medical-benefit authorization and NOT on a
+# medication-only one. Her words: "not thrown into every medication PA."
+MEDICAL_BENEFIT_ONLY_CODES = NURSING_CODES | PER_DIEM_CODES
+
+# Payer wording -> which authorization it implies. Anything absent here is
+# UNDETERMINED on purpose; the specialist confirms the benefit.
+_PAYER_SUBMISSION_TYPE: dict[str, SubmissionType] = {
+    "part d": SubmissionType.MEDICATION_ONLY,
+    "cmm": SubmissionType.MEDICATION_ONLY,
+    "coverage determination": SubmissionType.MEDICATION_ONLY,
+    "part b": SubmissionType.MEDICAL_BENEFIT,
+    "medical": SubmissionType.MEDICAL_BENEFIT,
+    "medical benefit": SubmissionType.MEDICAL_BENEFIT,
+    "home infusion": SubmissionType.MEDICAL_BENEFIT,
+}
+
+
+def submission_type_for_payer(payer_type: str | None) -> SubmissionType:
+    """Map extracted payer wording onto a submission type, or admit ignorance."""
+    if not payer_type:
+        return SubmissionType.UNDETERMINED
+    return _PAYER_SUBMISSION_TYPE.get(_norm(payer_type), SubmissionType.UNDETERMINED)
+
+
+def screen_service_codes(
+    service_codes: list[tuple[str, int]],
+    submission_type: SubmissionType,
+) -> tuple[list[tuple[str, int]], list[str]]:
+    """Decide which specialist-supplied service codes belong on THIS submission.
+
+    Returns (codes_to_print, flags). Nothing is ever dropped silently.
+
+      MEDICATION_ONLY  nursing and per-diem codes are withheld, each with a
+                       flag naming where they should go instead
+      MEDICAL_BENEFIT  everything the specialist supplied is carried through
+      UNDETERMINED     carried through, plus one flag that the benefit is
+                       unconfirmed, so the screen was not applied
+
+    This function never adds a code and never computes units. It only filters.
+    """
+    kept: list[tuple[str, int]] = []
+    flags: list[str] = []
+
+    for code, units in service_codes:
+        bare = str(code).strip().upper()
+        if (submission_type is SubmissionType.MEDICATION_ONLY
+                and bare in MEDICAL_BENEFIT_ONLY_CODES):
+            kind = "Nursing" if bare in NURSING_CODES else "Per-diem"
+            flags.append(
+                f"{bare} withheld: {kind.lower()} codes do not belong on a "
+                f"medication-only (Part D / CMM) submission. They belong on the "
+                f"home-infusion medical-benefit authorization — submit them there."
+            )
+        else:
+            kept.append((code, units))
+
+    if submission_type is SubmissionType.UNDETERMINED and service_codes:
+        flags.append(
+            "Benefit not determined from the referral, so the nursing/per-diem "
+            "screen was NOT applied. Confirm whether this is a medication-only "
+            "(Part D / CMM) or a medical-benefit submission before sending."
+        )
+
+    return kept, flags
+
 
 # Frequency table: how the order is written -> (kind, value)
 #   ("per_day", n)       n doses a day, every day
@@ -393,13 +494,23 @@ def calculate_regimen_case(start: date, regimens: list[Regimen]) -> CaseCalc:
 # ---------------------------------------------------------------------------
 
 def format_one_liner(case: CaseCalc, icd_codes: list[str],
-                     service_codes: list[tuple[str, int]] | None = None) -> str:
+                     service_codes: list[tuple[str, int]] | None = None,
+                     *,
+                     submission_type: SubmissionType = SubmissionType.UNDETERMINED,
+                     ) -> str:
     """
     Rule 2's exact format. Several drugs merge into one line.
 
     service_codes: optional, e.g. [("S9502", 28)]. Lesson from experiment #1 —
     the specialist sometimes omits service codes entirely, so the CALLER (a
     person) decides whether they appear. The AI never adds them.
+
+    submission_type: which authorization this line is for. Nursing and per-diem
+    codes are withheld from a medication-only (Part D / CMM) submission and
+    kept on a medical-benefit one — see screen_service_codes(). The default is
+    UNDETERMINED, which carries the codes through untouched; callers that know
+    the benefit should say so, and the pipeline does. Call screen_service_codes()
+    directly when the withholding flags need to be shown to the specialist.
     """
     drug_parts = []
     jcode_parts = []
@@ -412,7 +523,8 @@ def format_one_liner(case: CaseCalc, icd_codes: list[str],
             jcode_parts.append(f"{d.jcode} x{d.jcode_units}")
 
     if service_codes:
-        jcode_parts.extend(f"{code} x{units}" for code, units in service_codes)
+        kept, _ = screen_service_codes(service_codes, submission_type)
+        jcode_parts.extend(f"{code} x{units}" for code, units in kept)
 
     return (
         f"Services Requested: {' + '.join(drug_parts)} – "

@@ -3,32 +3,55 @@
   "source": "PriorMD AI Workflow Reference.docx, Part 2",
   "payer_type": "Part D",
   "difficulty": "judgment",
-
   "extraction_expected": {
-    "therapy_dates": { "start": "2026-07-24", "end": "2026-09-03" },
+    "therapy_dates": {
+      "start": "2026-07-24",
+      "end": "2026-09-03"
+    },
     "drugs": [
-      { "drug_name": "Cefepime", "dose_mg": 2000, "frequency": "q12h" },
-      { "drug_name": "Daptomycin", "dose_mg": 335, "frequency": "q24h" }
+      {
+        "drug_name": "Cefepime",
+        "dose_mg": 2000,
+        "frequency": "q12h"
+      },
+      {
+        "drug_name": "Daptomycin",
+        "dose_mg": 335,
+        "frequency": "q24h"
+      }
     ]
   },
-
   "calc": {
     "start": "2026-07-24",
     "end": "2026-09-03",
     "day_supply": 42,
     "drugs": [
-      { "drug_name": "Cefepime", "dose_mg": 2000, "vial_size_mg": 2000, "frequency": "q12h",
-        "total_vials": 84, "jcode": "J0692", "jcode_units": 336 },
-      { "drug_name": "Daptomycin", "dose_mg": 335, "vial_size_mg": 500, "frequency": "q24h",
-        "total_vials": 42, "jcode": "J0878", "jcode_units": 14070 }
+      {
+        "drug_name": "Cefepime",
+        "dose_mg": 2000,
+        "vial_size_mg": 2000,
+        "frequency": "q12h",
+        "total_vials": 84,
+        "jcode": "J0692",
+        "jcode_units": 336
+      },
+      {
+        "drug_name": "Daptomycin",
+        "dose_mg": 335,
+        "vial_size_mg": 500,
+        "frequency": "q24h",
+        "total_vials": 42,
+        "jcode": "J0878",
+        "jcode_units": 14070
+      }
     ]
   },
-
-  "icd_codes": ["T81.49XA", "L08.9"],
+  "icd_codes": [
+    "T81.49XA",
+    "L08.9"
+  ],
   "service_codes": [],
-
-  "one_liner": "Services Requested: Cefepime 2g vial IV q12h (Dose: 2g, Total Qty: 84 vials) + Daptomycin 500mg vial IV q24h (Dose: 335mg, Total Qty: 42 vials) – J0692 x336, J0878 x14070 for T81.49XA + L08.9 Dates of Service: 07/24/2026 to 09/03/2026 (42 day supply).",
-
+  "one_liner": "Services Requested: Cefepime 2g vial IV q12h (Dose: 2g, Total Qty: 84 vials) + Daptomycin 500mg vial IV q24h (Dose: 335mg, Total Qty: 42 vials) \u2013 J0692 x336, J0878 x14070 for T81.49XA + L08.9 Dates of Service: 07/24/2026 to 09/03/2026 (42 day supply).",
   "required_flags": [
     "165mg discarded"
   ],
@@ -39,6 +62,6 @@
     "99601",
     "99602"
   ],
-
-  "judgment_notes": "SME deliberately routed diagnosis as post-op skin/soft-tissue infection (T81.49XA + L08.9), NOT hardware/internal-fixation infection, to keep the case clean for FDA-supported use under Part D — even though the chart mentions ORIF hardware. Open questions: why .49XA over .42XA; why L08.9 over documented organism codes (B96.5/B95.62)."
+  "judgment_notes": "SME deliberately routed diagnosis as post-op skin/soft-tissue infection (T81.49XA + L08.9), NOT hardware/internal-fixation infection, to keep the case clean for FDA-supported use under Part D \u2014 even though the chart mentions ORIF hardware. Open questions: why .49XA over .42XA; why L08.9 over documented organism codes (B96.5/B95.62). | 2026-10-13: the 99601/99602 entries in forbidden_in_output are KEPT, but they are now justified by this case's submission type (Part D, medication only) rather than by a global ban. The SME narrowed the 2026-08-03 ruling: nursing and per-diem codes belong on medical-benefit authorizations. See case-002, where the ban was wrong and has been removed.",
+  "submission_type": "medication_only"
 }

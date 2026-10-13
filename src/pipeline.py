@@ -19,7 +19,14 @@ import sys
 from dataclasses import dataclass, field
 from datetime import date
 
-from pa_calc import CaseCalc, DrugOrder, calculate_case, format_one_liner
+from pa_calc import (
+    CaseCalc,
+    DrugOrder,
+    calculate_case,
+    format_one_liner,
+    screen_service_codes,
+    submission_type_for_payer,
+)
 
 VALID_FREQUENCIES = {"q6h", "q8h", "q12h", "q24h", "daily", "weekly", "q48h"}
 
@@ -115,14 +122,22 @@ def run_pipeline(data: dict) -> tuple[CaseCalc | None, ValidationResult]:
 # ---------------------------------------------------------------------------
 
 def render_worksheet(data: dict, case: CaseCalc, v: ValidationResult,
-                     icd_codes: list[str] | None = None) -> str:
+                     icd_codes: list[str] | None = None,
+                     service_codes: list[tuple[str, int]] | None = None) -> str:
     """Every number here came from code. ICD codes are left blank for the
     judgment layer (not built) or the specialist to fill in.
+
+    service_codes are whatever the specialist supplied. They are screened
+    against the submission type (nursing and per-diem codes belong on the
+    medical-benefit authorization, not on a medication-only Part D / CMM one)
+    and anything withheld is reported as a flag, never dropped quietly.
     """
     lines = ["=" * 60, "PA CASE WORKSHEET (auto-generated)", "=" * 60]
 
     payer = (data.get("insurance") or {}).get("payer_type", "unknown")
-    lines.append(f"Payer type: {payer}")
+    submission_type = submission_type_for_payer(payer)
+    kept_codes, code_flags = screen_service_codes(service_codes or [], submission_type)
+    lines.append(f"Payer type: {payer}  (submission: {submission_type.value})")
     lines.append(f"Dates: {case.start:%m/%d/%Y} to {case.end:%m/%d/%Y} ({case.day_supply} day supply)")
     lines.append("")
 
@@ -136,7 +151,9 @@ def render_worksheet(data: dict, case: CaseCalc, v: ValidationResult,
                      f"{d.total_vials} vials, {d.jcode or '??'} x{d.jcode_units or '??'}")
     lines.append("")
 
-    all_flags = v.warnings + case.flags + [f for d in case.drugs for f in d.flags]
+    all_flags = (v.warnings + case.flags
+                 + [f for d in case.drugs for f in d.flags]
+                 + code_flags)
     if all_flags:
         lines.append("FLAGS FOR SPECIALIST REVIEW:")
         for f in all_flags:
@@ -149,7 +166,8 @@ def render_worksheet(data: dict, case: CaseCalc, v: ValidationResult,
     if icd_codes:
         lines.append("")
         lines.append("DRAFT ONE-LINER (pending specialist approval):")
-        lines.append(format_one_liner(case, icd_codes))
+        lines.append(format_one_liner(case, icd_codes, kept_codes,
+                                      submission_type=submission_type))
     else:
         lines.append("ICD codes: [awaiting coding-judgment step / specialist]")
 

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SME Reply, 13 Oct 2026 — What It Changes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Caveat:wght@500&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F1; --ink:#17212B; --sunk:#E7EBE6; --rule:#D2D9D2;
+  --accent:#0F6E5C; --accent-soft:#DCEAE4;
+  --stamp:#BF3B2B; --stamp-soft:#F5DED9;
+  --flag:#A9721A; --flag-soft:#F6E8CE;
+  --human:#4C5BB3; --human-soft:#E0E3F5;
+  --display:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  --body:"Newsreader",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --hand:"Caveat","Bradley Hand",cursive;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#131917; --ink:#E6EBE7; --sunk:#232C29; --rule:#2E3A36;
+  --accent:#5FC0A6; --accent-soft:#1E3630;
+  --stamp:#E8705C; --stamp-soft:#3A211D;
+  --flag:#D9A44C; --flag-soft:#382C15;
+  --human:#8E9AE8; --human-soft:#232847;
+}}
+:root[data-theme="dark"]{
+  --paper:#131917; --ink:#E6EBE7; --sunk:#232C29; --rule:#2E3A36;
+  --accent:#5FC0A6; --accent-soft:#1E3630;
+  --stamp:#E8705C; --stamp-soft:#3A211D;
+  --flag:#D9A44C; --flag-soft:#382C15;
+  --human:#8E9AE8; --human-soft:#232847;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:56px 16px 96px}
+header{border-bottom:3px solid var(--ink);padding-bottom:22px;margin-bottom:34px}
+.kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);font-weight:600}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,5.4vw,43px);line-height:1.1;
+  margin:.28em 0 .3em;letter-spacing:-.018em}
+.sub{font-size:18px;color:var(--ink);opacity:.78;margin:0;max-width:62ch}
+.meta{font-family:var(--mono);font-size:12px;opacity:.6;margin-top:18px}
+
+.tally{display:flex;flex-wrap:wrap;gap:10px;margin:30px 0 42px}
+.tally div{flex:1 1 150px;min-width:0;background:var(--sunk);border:1px solid var(--rule);
+  border-radius:9px;padding:13px 15px}
+.tally b{display:block;font-family:var(--display);font-size:27px;line-height:1.05;font-weight:700}
+.tally span{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;opacity:.72;display:block;margin-top:5px}
+.tally .t-stamp b{color:var(--stamp)} .tally .t-flag b{color:var(--flag)}
+.tally .t-ok b{color:var(--accent)} .tally .t-open b{color:var(--human)}
+
+h2{font-family:var(--display);font-weight:700;font-size:25px;margin:54px 0 6px;letter-spacing:-.012em}
+h2 + .lede{margin:0 0 24px;opacity:.74;max-width:66ch}
+
+.row{border:1px solid var(--rule);border-radius:11px;margin:0 0 18px;overflow:hidden;background:var(--sunk)}
+.row > .top{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:13px 17px;
+  border-bottom:1px solid var(--rule)}
+.id{font-family:var(--mono);font-size:11.5px;font-weight:600;opacity:.6;flex:0 0 auto}
+.title{font-family:var(--display);font-weight:700;font-size:16.5px;flex:1 1 220px;min-width:0}
+.chip{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;white-space:nowrap;flex:0 0 auto;border:1px solid}
+.c-contra{background:var(--stamp-soft);color:var(--stamp);border-color:var(--stamp)}
+.c-extend{background:var(--flag-soft);color:var(--flag);border-color:var(--flag)}
+.c-confirm{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.c-done{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.c-todo{background:transparent;color:var(--human);border-color:var(--human)}
+.row > .body{padding:4px 17px 15px}
+blockquote{margin:14px 0;padding:2px 0 2px 15px;border-left:3px solid var(--accent);
+  font-size:16.5px;font-style:italic;opacity:.95}
+.was{background:var(--paper);border:1px dashed var(--rule);border-radius:7px;padding:10px 13px;margin:13px 0;
+  font-size:15.5px}
+.was b{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;
+  opacity:.65;display:block;margin-bottom:3px;font-weight:600}
+.hits{display:flex;flex-wrap:wrap;gap:6px;margin:13px 0 2px}
+.hits code{font-family:var(--mono);font-size:11.5px;background:var(--paper);border:1px solid var(--rule);
+  border-radius:5px;padding:3px 7px;white-space:nowrap}
+.note{background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;
+  padding:11px 15px;margin:15px 0 4px;font-size:16px;line-height:1.55}
+.note::before{content:"why it matters";display:block;font-family:var(--mono);font-size:10px;
+  font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:15.5px}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;opacity:.68}
+td code{font-family:var(--mono);font-size:12px}
+ul{padding-left:1.15em} li{margin:7px 0}
+.keep{background:var(--accent-soft);border:1px solid var(--accent);border-radius:11px;padding:6px 20px 18px;margin:22px 0}
+.keep h3{font-family:var(--display);font-size:17px;margin:16px 0 8px}
+footer{margin-top:66px;padding-top:20px;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:11.5px;opacity:.6;line-height:1.8}
+a{color:var(--accent)}
+</style></head><body><div class="wrap">
+
+<header>
+  <div class="kicker">PriorMD · change assessment</div>
+  <h1>The SME's reply, and what it breaks</h1>
+  <p class="sub">Her returned questionnaire settles the two assumptions the design was waiting on,
+  and overturns three things we had already built or written down. This page is the line-by-line
+  diff: her words, what the design said, and which artifact has to move.</p>
+  <div class="meta">Source: PriorMD_QuestionnaireAnswers.docx · 17,194 characters · no attachments · received 13 Oct 2026</div>
+</header>
+
+<div class="tally">
+  <div class="t-ok"><b>2</b><span>assumptions settled</span></div>
+  <div class="t-stamp"><b>3</b><span>contradictions</span></div>
+  <div class="t-flag"><b>4</b><span>extensions</span></div>
+  <div class="t-open"><b>2</b><span>new open questions</span></div>
+</div>
+
+<h2>1 · The contradictions</h2>
+<p class="lede">Each of these was written down somewhere as settled. It was not.</p>
+
+<div class="row">
+  <div class="top"><span class="id">D-01</span>
+    <span class="title">Nursing and per-diem codes: we encoded a global ban she never gave</span>
+    <span class="chip c-contra">contradicts</span><span class="chip c-done">fixed today</span></div>
+  <div class="body">
+    <blockquote>"when I previously said nursing codes and per diem codes should not be included, I was
+    talking about medication only Part D or CMM submissions. I do not want those codes removed from the
+    entire system. For home infusion and medical benefit authorizations, those codes absolutely still
+    matter. They just need to be handled in the correct workflow and not thrown into every medication PA."</blockquote>
+    <div class="was"><b>what we had</b>A global prohibition, taken from her 3 Aug message: the system
+    prompt said <em>"NEVER include or calculate nursing codes"</em>, a test named
+    <code>test_nursing_codes_never_auto_added</code> enforced it, and both eval cases listed
+    99601/99602 under <code>forbidden_in_output</code>. The project was actively asserting a rule she
+    did not hold.</div>
+    <p>The rule is now scoped to the benefit rather than applied everywhere: a
+    <code>SubmissionType</code> of medication-only, medical-benefit or undetermined, and a pure
+    <code>screen_service_codes()</code> that withholds those codes from a Part D / CMM submission with a
+    flag naming where they belong, carries them through on a medical-benefit one, and — when the
+    benefit is not documented — refuses to apply the screen at all rather than assuming a default.</p>
+    <p class="note">The sharpest part: case-002's ban was the wrong way round. That case's expected
+    one-liner carries <code>S9502 x28</code> — a per-diem code — which makes it a home-infusion
+    medical-benefit submission, exactly the workflow where she says nursing codes still matter. We had
+    banned them on the one case that was entitled to them. The ban is removed there and kept on
+    case-001, where Part D now justifies it.</p>
+    <p>What survives from 3 Aug is the half she did not retract: the AI never <em>calculates</em>
+    nursing units, because they vary by service dates, day supply and provider. It only decides whether
+    the specialist's number belongs on the submission in hand.</p>
+    <div class="hits"><code>src/pa_calc.py</code><code>src/pipeline.py</code>
+      <code>src/test_pa_calc.py +9 tests</code><code>prompts/system_prompt.md</code>
+      <code>evals/…/case-001/expected.json</code><code>evals/…/case-002/expected.json</code></div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="top"><span class="id">D-02</span>
+    <span class="title">No drug table — research the medication when the case arrives</span>
+    <span class="chip c-contra">contradicts</span><span class="chip c-todo">Q-08 raised</span></div>
+  <div class="body">
+    <blockquote>"I do not really want to design this around a certain number of medications or build a
+    small drug list into the system… I want the AI to be able to research the medication when the case
+    comes in."</blockquote>
+    <div class="was"><b>what we had</b>Assumption A5 and board question Q-02 framed this as a choice
+    between a curated table that grows one SME-confirmed row at a time and a full HCPCS dataset.
+    <code>JCODE_TABLE</code> holds four hand-written anti-infectives.</div>
+    <p>She rejected the premise rather than picking a side. Named sources: CMS, FDA labeling, DailyMed,
+    PrescriberPoint, manufacturer prescribing information. <strong>A5 is overturned and Q-02 is closed
+    without either of its options being built.</strong> The four rows are now a stopgap for the eval
+    suite, not the architecture.</p>
+    <p class="note">This is the first place the project's central rule does not obviously hold. A J-code
+    read off a retrieved page is neither a deterministic calculation nor a constrained judgment call —
+    it is testimony from a third party, which is the one thing the design says never to trust without a
+    gate. Raised as Q-08: source precedence when they disagree, cache versus per-case fetch, and whether
+    a retrieved billing unit may enter a calculation at all before a specialist confirms it.</p>
+    <div class="hits"><code>docs/engine-design.html §A5</code><code>src/pa_calc.py JCODE_TABLE</code>
+      <code>_matrix/discussions.md Q-02 ✓ Q-08 new</code></div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="top"><span class="id">D-03</span>
+    <span class="title">A referral is hundreds of pages, not several</span>
+    <span class="chip c-contra">contradicts</span><span class="chip c-todo">design edit owed</span></div>
+  <div class="body">
+    <blockquote>"the physician order, progress notes, hospital records, discharge notes, specialist
+    notes, labs, cultures, medication history, diagnosis, demographics, insurance… sometimes one big PDF
+    and sometimes several different documents."<br><br>
+    On the Ertapenem case: <strong>"The original referral is hundreds of pages long."</strong></blockquote>
+    <div class="was"><b>what we had</b>A4, stated honestly as guesswork: <em>"A referral is several PDFs,
+    some of them scans. I have never seen a single real referral."</em></div>
+    <p>Right in kind, wrong by an order of magnitude. Several scanned PDFs is a parsing problem; hundreds
+    of mixed hospital pages is a retrieval problem, and the two have different failure modes — the second
+    one fails by <em>missing</em> a value that was there, which no amount of extraction-prompt tightening
+    detects. Layer ①'s contract and the intake shape both need redoing.</p>
+    <div class="hits"><code>docs/engine-design.html §A4, §2, §9</code><code>plan.yaml EXTRACT row</code></div>
+  </div>
+</div>
+
+<h2>2 · The extensions</h2>
+<p class="lede">Not wrong, but smaller than what she is asking for.</p>
+
+<div class="row">
+  <div class="top"><span class="id">D-04</span>
+    <span class="title">CMM blanks are four states, not three</span>
+    <span class="chip c-extend">extends</span><span class="chip c-todo">Q-07 raised</span></div>
+  <div class="body">
+    <blockquote>"It needs to understand the difference between a question that was never triggered, a
+    question that does not apply, and a question that actually needs an answer but the chart does not
+    support it."</blockquote>
+    <div class="was"><b>what we had</b>Three states: Answered / NotApplicable / Unsupported.</div>
+    <p>She splits our <code>NotApplicable</code> in two — a conditional branch the form never reached
+    versus a question it did reach that is not relevant to this patient. The distinction matters because
+    88 of the 186 measured questions are blank: if those two are collapsed, the fill-rate metric is
+    measuring nothing. It also probably splits across layers, since branch state is structural and
+    belongs with the form model while unsupported-by-chart is a judgment call.</p>
+    <div class="hits"><code>docs/engine-design.html CMM section</code><code>_matrix/discussions.md Q-07</code></div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="top"><span class="id">D-05</span>
+    <span class="title">The verdict has to come before the submission is finished</span>
+    <span class="chip c-extend">extends</span><span class="chip c-todo">new block owed</span></div>
+  <div class="body">
+    <blockquote>"look at the patient's clinicals and help us determine if the patient meets the payer's
+    criteria before we even get all the way through the submission."</blockquote>
+    <p>Our pipeline produces its output at the end. She wants a readiness read at the start, so that a
+    case that cannot succeed is stopped before the specialist spends the effort. That is a new output
+    with a different input set — clinicals against payer criteria, without the coding and quantity work
+    having happened yet.</p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="top"><span class="id">D-06</span>
+    <span class="title">ICD selection: wording latitude, invention still forbidden</span>
+    <span class="chip c-extend">extends</span><span class="chip c-todo">prompt edit owed</span></div>
+  <div class="body">
+    <blockquote>"Providers do not always document things using the exact ICD description."</blockquote>
+    <div class="was"><b>what we had</b>A grounding rule that requires a <code>source_quote</code> for
+    every extracted value — which, read strictly, demands chart wording that matches the code.</div>
+    <p>The rule has to admit clinical synonymy while still refusing codes the chart does not support.
+    That is a narrower gate than "quote or nothing" and a harder one to test. She also attaches a second
+    output to it: the system should say what is missing and <em>what documentation would unlock a
+    stronger diagnosis</em>.</p>
+    <div class="hits"><code>prompts/extraction_prompt.md</code><code>prompts/system_prompt.md</code></div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="top"><span class="id">D-07</span>
+    <span class="title">"What is missing" is a deliverable, not a flag list</span>
+    <span class="chip c-extend">extends</span><span class="chip c-todo">parked todo promoted</span></div>
+  <div class="body">
+    <blockquote>"Is this ready to submit or not? If it is ready, give me what I need… If it is not
+    ready, tell me exactly what is missing, why I need it, and what I need to go back and get from the
+    provider."</blockquote>
+    <p>A better one-line definition of the product than the one in AGENT.md. It also settles a parked
+    todo: <code>render_worksheet()</code> currently prints flags as strings, and this answer makes the
+    structured <code>Finding[]</code> — each with what is missing, why it matters, and who to ask —
+    the actual output rather than an internal tidy-up.</p>
+    <div class="hits"><code>AGENT.md north star</code><code>src/pipeline.py render_worksheet()</code></div>
+  </div>
+</div>
+
+<h2>3 · The two assumptions that are now settled</h2>
+
+<table>
+  <tr><th>was</th><th>her answer</th><th>consequence</th></tr>
+  <tr>
+    <td><strong>A1</strong> — output pasted into the portal by hand, or submitted electronically?</td>
+    <td>Manual for v1. <em>"I'm okay with the PA specialist still manually submitting through
+    CoverMyMeds… I really just need the AI to organize everything correctly and give us the answers in a
+    clean, paste ready way."</em></td>
+    <td>No ePA work in S1, and the system boundary in §9 stops at the clipboard. "Paste ready" becomes a
+    hard output requirement: field-by-field copyable, not a prose summary.</td>
+  </tr>
+  <tr>
+    <td><strong>A4</strong> — what a referral actually looks like</td>
+    <td>The full medical record, one PDF or many, up to hundreds of pages.</td>
+    <td>Settled as a description. <strong>Still unsettled as evidence</strong> — see below.</td>
+  </tr>
+</table>
+
+<h2>4 · The answer that was not one</h2>
+<p class="lede">The five referrals she describes were not attached, and do not exist in any form we can run against.</p>
+<p>Board question Q-01 asked for the original referrals and the judgment notes behind the 21 cases. Her
+reply describes five of them — Ocrevus, Remicade, Tygacil, Daptomycin, Ertapenem — in prose, with no
+documents. Confirmed as all there is.</p>
+<p>So the extraction layer still has no input to be measured against, and the gap just got wider: the
+real input is hundreds of mixed pages, which is the hardest version of the problem and the one we have
+zero samples of. Synthesising referrals from the CMM submissions was always circular; now it is worse
+than circular, because it would produce a tidy one-pager and report the score as if it came from the
+hard case.</p>
+<p class="note">The cheapest honest unblock is no longer "a few referrals" — it is <strong>one</strong>.
+A single real de-identified packet would fix the document shape, the noise level and the retrieval depth,
+and would turn one eval case from format-only into end-to-end. Twenty-one is a nice-to-have; one is
+load-bearing. Until then the board carries the EXTRACT row as explicitly unmeasured rather than quietly
+unmeasured.</p>
+
+<div class="keep">
+  <h3>What her reply leaves standing</h3>
+  <p>Worth saying plainly, because the list above is all movement: nothing in her answers touches the
+  spine of the design.</p>
+  <ul>
+    <li>The five-layer split — extraction, zero-trust validation, deterministic calculation, constrained
+      judgment, specialist review — and the rule that deterministic work stays in code.</li>
+    <li>Human review as the last layer. Her v1 explicitly keeps the specialist submitting by hand, which
+      makes full autonomy a non-goal by her own choice and not just ours.</li>
+    <li>Never guess, flag instead. Reinforced twice: unknown drugs, and unsupported diagnoses.</li>
+    <li>Every calculation rule from Q7 and Q8 — single-dose-vial rounding per dose, independent J-code
+      units, schedule-built dose counts. 48 tests, unchanged by this reply.</li>
+  </ul>
+</div>
+
+<h2>5 · Still owed</h2>
+<ul>
+  <li><strong>Design doc edits</strong> — A4 rescaled, A5 overturned, A1 closed, the CMM section's
+    fourth state, and the pre-submission verdict in the output list.</li>
+  <li><strong>AGENT.md</strong> — her one-line definition replaces the current north star, and the
+    2026-08-03 scope line needs the nursing-code narrowing.</li>
+  <li><strong>Q-07 and Q-08</strong> — both need her before they can be built, and Q-08 is the one that
+    touches the architecture.</li>
+  <li><strong>One real referral packet</strong> — the single highest-value thing to ask for next.</li>
+  <li><strong>T-privacy-sweep</strong> — CASE-002's CMM page still carries a "Logged in as [name]" portal
+    header; all 42 case PDFs want a re-scan. Not public (it sits under the ignored <code>data/</code>),
+    but it is a boundary issue rather than a cosmetic one.</li>
+</ul>
+
+<footer>
+  PriorMD · change assessment against PriorMD_QuestionnaireAnswers.docx, 13 Oct 2026<br>
+  Encoded this pass: D-01 in full, Q-01/Q-02/Q-04 closed, Q-05 narrowed, Q-07/Q-08 raised.<br>
+  Companion to <a href="engine-design.html">engine-design.html</a>. No patient data on this page.
+</footer>
+</div></body></html>

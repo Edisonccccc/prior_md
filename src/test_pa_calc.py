@@ -18,6 +18,9 @@ from pa_calc import (
     day_supply,
     end_date_for_supply,
     format_one_liner,
+    screen_service_codes,
+    submission_type_for_payer,
+    SubmissionType,
     format_strength,
     doses_per_day,
     schedule,
@@ -118,19 +121,93 @@ def test_aztreonam_example():
     assert azt.jcode_units == 336         # 4 units/dose x 84 doses
 
 # ---------------------------------------------------------------------------
-# Nursing codes (99601/99602) — removed from the AI workflow on the SME's
-# instruction, 2026-08-03:
-# "those are examples, varies by service dates/day supply; remove nursing
-#  coding from the ai workflow; tool is mainly for medication adjudication."
-# nursing_units() and its tests were deleted. If nursing codes are needed, the
-# specialist passes them in through service_codes by hand.
+# Nursing codes (99601/99602) and per-diem codes (S9500-S9502) — SCOPED to the
+# benefit, not banned. SME, 2026-10-13, narrowing her own 2026-08-03 ruling:
+#   "when I previously said nursing codes and per diem codes should not be
+#    included, I was talking about medication only Part D or CMM submissions.
+#    I do not want those codes removed from the entire system. For home
+#    infusion and medical benefit authorizations, those codes absolutely still
+#    matter. They just need to be handled in the correct workflow and not
+#    thrown into every medication PA."
+# What still holds from 2026-08-03: the AI never CALCULATES nursing units.
+# The specialist supplies them; this layer only routes them.
 # ---------------------------------------------------------------------------
 
-def test_nursing_codes_never_auto_added():
-    """The AI never adds 99601/99602 to a one-liner on its own."""
+def test_nursing_codes_withheld_from_medication_only():
+    """A Part D / CMM submission is medication only — nursing codes stay off it."""
+    kept, flags = screen_service_codes(
+        [("J0834", 336), ("99601", 4)], SubmissionType.MEDICATION_ONLY)
+    assert kept == [("J0834", 336)]
+    assert any("99601" in f for f in flags)
+
+
+def test_nursing_codes_kept_on_medical_benefit():
+    """Her 2026-10-13 correction: on home infusion they absolutely still matter."""
+    codes = [("J0834", 336), ("S9502", 28), ("99601", 4), ("99602", 8)]
+    kept, flags = screen_service_codes(codes, SubmissionType.MEDICAL_BENEFIT)
+    assert kept == codes
+    assert flags == []
+
+
+def test_per_diem_codes_follow_the_same_scope():
+    """She named per-diem codes in the same breath as nursing codes."""
+    kept, _ = screen_service_codes([("S9500", 21)], SubmissionType.MEDICATION_ONLY)
+    assert kept == []
+    kept, _ = screen_service_codes([("S9500", 21)], SubmissionType.MEDICAL_BENEFIT)
+    assert kept == [("S9500", 21)]
+
+
+def test_undetermined_benefit_never_guesses():
+    """Unknown benefit = flag, not an assumption. Codes are not thrown away."""
+    codes = [("99601", 4)]
+    kept, flags = screen_service_codes(codes, SubmissionType.UNDETERMINED)
+    assert kept == codes
+    assert any("not determined" in f.lower() for f in flags)
+
+
+def test_screen_never_adds_a_code():
+    """The screen only filters. It cannot invent a code or a unit count."""
+    for st in SubmissionType:
+        kept, _ = screen_service_codes([], st)
+        assert kept == []
+
+
+def test_payer_wording_maps_to_submission_type():
+    assert submission_type_for_payer("Part D") is SubmissionType.MEDICATION_ONLY
+    assert submission_type_for_payer("CMM") is SubmissionType.MEDICATION_ONLY
+    assert submission_type_for_payer("Part B") is SubmissionType.MEDICAL_BENEFIT
+    assert submission_type_for_payer("home infusion") is SubmissionType.MEDICAL_BENEFIT
+    # Anything unrecognised is undetermined on purpose — never a default guess.
+    assert submission_type_for_payer("Aetna PPO") is SubmissionType.UNDETERMINED
+    assert submission_type_for_payer(None) is SubmissionType.UNDETERMINED
+
+
+def test_one_liner_withholds_nursing_on_part_d():
+    """End to end through the formatter, which is what a Part D case prints."""
     case = _worked_case()
-    ours = format_one_liner(case, icd_codes=["T81.49XA", "L08.9"])
-    assert "99601" not in ours and "99602" not in ours
+    ours = format_one_liner(case, icd_codes=["T81.49XA", "L08.9"],
+                            service_codes=[("99601", 4)],
+                            submission_type=SubmissionType.MEDICATION_ONLY)
+    assert "99601" not in ours
+
+
+def test_one_liner_keeps_nursing_on_medical_benefit():
+    case = _worked_case()
+    ours = format_one_liner(case, icd_codes=["T81.49XA", "L08.9"],
+                            service_codes=[("S9502", 42), ("99601", 4)],
+                            submission_type=SubmissionType.MEDICAL_BENEFIT)
+    assert "99601 x4" in ours and "S9502 x42" in ours
+
+
+def test_ai_still_never_calculates_nursing_units():
+    """The half of the 2026-08-03 ruling she did NOT retract: no nursing math.
+    With nothing supplied by the specialist, nothing appears."""
+    case = _worked_case()
+    for st in SubmissionType:
+        ours = format_one_liner(case, icd_codes=["T81.49XA", "L08.9"],
+                                submission_type=st)
+        assert "99601" not in ours and "99602" not in ours
+
 
 # ---------------------------------------------------------------------------
 # Rule 8 — an unrecognised drug never gets a guessed J-code
