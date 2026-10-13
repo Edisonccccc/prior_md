@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PriorMD Handover</title>
+<meta name="description" content="What was built, what it is worth, what is missing, and what whoever picks this up needs on day one.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F1; --ink:#17212B; --sunk:#E7EBE6; --rule:#D2D9D2; --mute:#6B7A76;
+  --accent:#0F6E5C; --accent-soft:#DCEAE4;
+  --stamp:#BF3B2B; --stamp-soft:#F5DED9;
+  --flag:#A9721A; --flag-soft:#F6E8CE;
+  --display:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  --body:"Newsreader",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#131917; --ink:#E6EBE7; --sunk:#232C29; --rule:#2E3A36; --mute:#8CA096;
+  --accent:#5FC0A6; --accent-soft:#1E3630;
+  --stamp:#E8705C; --stamp-soft:#3A211D;
+  --flag:#D9A44C; --flag-soft:#382C15;}}
+:root[data-theme="dark"]{
+  --paper:#131917; --ink:#E6EBE7; --sunk:#232C29; --rule:#2E3A36; --mute:#8CA096;
+  --accent:#5FC0A6; --accent-soft:#1E3630;
+  --stamp:#E8705C; --stamp-soft:#3A211D;
+  --flag:#D9A44C; --flag-soft:#382C15;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+  font-size:17.5px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:52px 16px 100px}
+header{border-bottom:3px solid var(--ink);padding-bottom:24px}
+.kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5.8vw,46px);line-height:1.08;
+  margin:.26em 0 .32em;letter-spacing:-.02em}
+.stopped{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;background:var(--stamp-soft);color:var(--stamp);border:1px solid var(--stamp);
+  border-radius:999px;padding:5px 12px}
+.sub{font-size:19px;margin:16px 0 0;max-width:64ch}
+h2{font-family:var(--display);font-weight:700;font-size:26px;margin:58px 0 4px;letter-spacing:-.014em}
+h2 .n{color:var(--accent);font-family:var(--mono);font-size:15px;margin-right:9px;letter-spacing:0}
+h2 + p.lede{margin:6px 0 20px;color:var(--mute);max-width:66ch}
+h3{font-family:var(--display);font-weight:700;font-size:18.5px;margin:30px 0 6px}
+p{max-width:70ch}
+ul{padding-left:1.2em;max-width:70ch} li{margin:9px 0}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.84em;background:var(--sunk);border:1px solid var(--rule);
+  border-radius:5px;padding:2px 5px}
+
+.bar{margin:34px 0 10px}
+.bar .track{height:13px;background:var(--sunk);border:1px solid var(--rule);border-radius:999px;overflow:hidden}
+.bar .fill{height:100%;width:33.3%;background:var(--accent)}
+.bar .cap{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;
+  color:var(--mute);margin-top:8px;gap:12px}
+
+.stack{border:1px solid var(--rule);border-radius:11px;overflow:hidden;margin:22px 0}
+.stack .lay{display:flex;gap:14px;align-items:flex-start;padding:14px 17px;border-bottom:1px solid var(--rule);background:var(--sunk)}
+.stack .lay:last-child{border-bottom:0}
+.stack .lay .num{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--mute);flex:0 0 18px;padding-top:3px}
+.stack .lay .what{flex:1 1 auto;min-width:0}
+.stack .lay .what b{font-family:var(--display);font-size:16.5px;display:block}
+.stack .lay .what span{font-size:15.5px;color:var(--mute)}
+.state{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;border:1px solid;white-space:nowrap;flex:0 0 auto;margin-top:2px}
+.s-done{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.s-part{background:var(--flag-soft);color:var(--flag);border-color:var(--flag)}
+.s-none{background:var(--stamp-soft);color:var(--stamp);border-color:var(--stamp)}
+
+.asset{border-left:3px solid var(--accent);background:var(--sunk);border-radius:0 9px 9px 0;
+  padding:15px 18px;margin:16px 0}
+.asset h3{margin:0 0 4px}
+.asset .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+.asset p{margin:6px 0 0}
+
+.warn{background:var(--flag-soft);border:1px solid var(--flag);border-radius:11px;padding:4px 20px 18px;margin:26px 0}
+.warn h3{color:var(--flag)}
+.danger{background:var(--stamp-soft);border:1px solid var(--stamp);border-radius:11px;padding:4px 20px 18px;margin:26px 0}
+.danger h3{color:var(--stamp)}
+
+table{width:100%;border-collapse:collapse;margin:20px 0;font-size:16px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}
+td:first-child{font-weight:600;white-space:nowrap}
+
+.check{list-style:none;padding:0;margin:18px 0}
+.check li{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--rule);margin:0}
+.check li::before{content:"";flex:0 0 17px;height:17px;border:2px solid var(--mute);border-radius:4px;margin-top:5px}
+.check li b{font-family:var(--display)}
+.who{font-family:var(--mono);font-size:10.5px;color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+
+@media (max-width:640px){
+  body{font-size:16.5px}
+  .wrap{padding:40px 15px 80px}
+  td:first-child{white-space:normal}
+  table{font-size:15px}
+  th,td{padding:9px 7px}
+  .stack .lay{flex-wrap:wrap;gap:9px}
+  .stack .lay .what{flex:1 1 100%;order:2}
+  .stack .lay .state{order:1}
+  .bar .cap{flex-direction:column;gap:3px}
+  h2{font-size:23px}
+}
+footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:11.5px;color:var(--mute);line-height:1.9}
+a{color:var(--accent)}
+</style></head><body><div class="wrap">
+
+<header>
+  <div class="kicker">PriorMD · handover</div>
+  <h1>What was built, and what it would take to continue</h1>
+  <span class="stopped">development stopped · 13 Oct 2026</span>
+  <p class="sub">This page is for whoever owns the decision about what happens next. It assumes no
+  technical background. It says what exists, what it is worth, what is missing, and the one thing
+  that is blocking everything else.</p>
+</header>
+
+<h2><span class="n">1</span>The idea, and whether it held up</h2>
+<p>A prior authorization is how an insurer is convinced to pay for an expensive therapy — here,
+home IV infusion delivered at a patient's house. A licensed specialist reads a referral from a
+doctor and produces three things: a one-line summary of exactly what is being requested with all
+its billing codes and quantities, the answers to the insurer's questionnaire, and the diagnosis
+code that justifies the whole request.</p>
+<p>The bet behind this project was that <strong>most of that work is arithmetic, and only a small
+part is judgment</strong>. If that is true, software can do the arithmetic perfectly, leave the
+judgment to a human, and still save most of the time.</p>
+<p><strong>The bet held up.</strong> The arithmetic turned out to be exactly as mechanical as hoped
+— counting doses across a treatment period, rounding vials, converting to billing units, computing
+day supply — and all of it is now built and locked down by tests. The judgment part turned out to be
+roughly as hard as feared, and it is the part that was never built.</p>
+
+<h2><span class="n">2</span>Where it actually got to</h2>
+<p class="lede">The project tracked twelve checkpoints across three stages. Four are met.</p>
+<div class="bar">
+  <div class="track"><div class="fill"></div></div>
+  <div class="cap"><span>4 of 12 checkpoints met</span><span>stage 0 complete · stage 1 partial</span></div>
+</div>
+<p>Translated: the groundwork is finished and proven, and roughly a third of the product that would
+actually be useful to a specialist exists. The pipeline was designed as five stages, each handing
+off to the next.</p>
+
+<div class="stack">
+  <div class="lay"><span class="num">1</span><span class="what"><b>Read the referral</b>
+    <span>Pull the drug, dose, frequency, dates, diagnosis and insurance out of the doctor's paperwork.</span></span>
+    <span class="state s-part">written, never tested</span></div>
+  <div class="lay"><span class="num">2</span><span class="what"><b>Distrust what was read</b>
+    <span>Check every extracted value before anything is calculated from it. Anything unproven stops the line.</span></span>
+    <span class="state s-done">built</span></div>
+  <div class="lay"><span class="num">3</span><span class="what"><b>Do the arithmetic</b>
+    <span>Doses, vials, billing units, day supply, and the final one-line request. No guessing anywhere.</span></span>
+    <span class="state s-done">built &amp; tested</span></div>
+  <div class="lay"><span class="num">4</span><span class="what"><b>Make the judgment call</b>
+    <span>Which diagnosis code to use, and whether this case will actually be approved.</span></span>
+    <span class="state s-none">not built</span></div>
+  <div class="lay"><span class="num">5</span><span class="what"><b>Specialist reviews and submits</b>
+    <span>A person approves everything before it goes to the insurer. Deliberately last, and deliberately never removed.</span></span>
+    <span class="state s-none">not built</span></div>
+</div>
+<p>Stage 1 is written but has never been run against a real referral, because no real referral was
+ever available. That is the blocker described in section 5.</p>
+
+<h2><span class="n">3</span>What you have that is worth keeping</h2>
+<p class="lede">Three things, in order of how hard they would be to recreate.</p>
+
+<div class="asset">
+  <span class="tag">asset 1 · the hard-won one</span>
+  <h3>A working calculation engine with the specialist's rules baked in</h3>
+  <p>About 1,300 lines of code and 48 automated tests. The code itself is not the valuable part — a
+  competent engineer could rewrite it in a week. <strong>The valuable part is that every rule in it
+  came from the specialist directly, and every example she gave is now a permanent test.</strong> When she
+  corrected something, the correction became a test that fails if anyone ever undoes it. That
+  accumulated set of rulings — including two rounds of interviews and her written answers — is
+  months of expert time, and it is the thing that would be genuinely painful to reconstruct.</p>
+</div>
+
+<div class="asset">
+  <span class="tag">asset 2</span>
+  <h3>A written decision trail</h3>
+  <p>Every significant design decision is recorded with the reasoning behind it and, crucially,
+  <strong>what would overturn it</strong>. Four published documents cover the system design, a plain-language
+  overview, the proposal shown to the specialist, and an assessment of what her latest answers
+  changed. A planning board tracks the open questions, each with what is known, what is not, and who
+  can decide it. Someone picking this up does not have to reverse-engineer intent from code.</p>
+</div>
+
+<div class="asset">
+  <span class="tag">asset 3 · not yours to keep</span>
+  <h3>The specialist relationship and her case library</h3>
+  <p>The specialist supplied 21 real solved cases covering 16 different medications, each with the insurer's
+  response, plus written answers to two rounds of detailed questions. This material is the only
+  source of ground truth the project ever had. <strong>It is her confidential data, it is deliberately
+  not in the code repository, and section 7 covers what should happen to it.</strong></p>
+</div>
+
+<h2><span class="n">4</span>What is missing, stated plainly</h2>
+
+<h3>The judgment layer — the part that decides whether a request gets approved</h3>
+<p>Choosing the right diagnosis code is not arithmetic. The specialist demonstrated this on the one fully
+worked case: she deliberately coded a post-surgical wound infection as a skin infection rather than
+a hardware infection, because the first route is clean under that patient's drug benefit and the
+second one invites a denial. Both codes were defensible from the chart. Only one gets paid. Nothing
+in the current system makes that kind of call.</p>
+
+<h3>The insurer's questionnaire — about a third of the deliverable, zero percent built</h3>
+<p>Every submission includes a payer questionnaire. Across the 21 cases we measured <strong>186
+questions, of which 98 were answered and 88 were left blank</strong>. Nothing in the system generates,
+checks or scores those answers. This is not a missing feature at the edge of the product — it is one
+of the three things a specialist produces, and it was never started.</p>
+
+<h3>Stage 1 has never been measured</h3>
+<p>The code that reads a referral exists, but there is no way to know how well it works, because we
+never had a real referral to run it on. See the next section.</p>
+
+<div class="warn">
+  <h3>One thing to be careful about if this restarts</h3>
+  <p>The 21 cases are currently doing two jobs at once: they are the examples the system would learn
+  from <em>and</em> the test set used to judge whether it works. That is circular — a system can score
+  well simply by having memorised its own exam. Whoever restarts should split them, roughly 14 to
+  learn from and 7 held back for testing, and commit to the split before looking at results. The
+  honest caveat is that 7 held-back cases means the score moves in jumps of about 14 percentage
+  points, so it detects disasters and not much else.</p>
+</div>
+
+<h2><span class="n">5</span>The one thing blocking everything</h2>
+<p class="lede">No real referral packet was ever obtained. One would unblock more than anything else on this page.</p>
+<p>The project asked for the original referrals behind the 21 cases twice. What arrived both times
+was the finished submission and the insurer's response, never the input document. On 13 October
+this was confirmed as all there is.</p>
+<p>The specialist described what a referral contains: the physician's order, progress notes, hospital
+records, discharge notes, specialist notes, lab results, cultures, medication history, diagnosis,
+demographics and insurance — <strong>"sometimes one big PDF and sometimes several different
+documents"</strong>, and on one case, <strong>"hundreds of pages long"</strong>.</p>
+<p>That description changes the problem. Reading a tidy two-page order is a parsing problem. Finding
+the right facts inside several hundred pages of mixed hospital records is a search problem, and it
+fails differently — it fails by <em>missing</em> something that was there, quietly, with no error
+message. The current code was written for the easy version and has never met the hard one.</p>
+<p><strong>A single real de-identified referral packet would be worth more to this project than another
+twenty solved cases.</strong> It would settle how the documents are actually shaped, how noisy they are,
+and how deep the information is buried, and it would turn one of the existing test cases from a
+partial check into a genuine end-to-end one. One. Not twenty-one.</p>
+
+<h2><span class="n">6</span>Three questions nobody can answer without the specialist</h2>
+<p class="lede">Each of these blocks real work, and each needs the specialist rather than an engineer.</p>
+<table>
+  <tr><th>question</th><th>why it is stuck</th></tr>
+  <tr><td>Can we get one real referral?</td>
+    <td>Everything about stage 1 depends on it, and it is the cheapest of the three to resolve —
+    one de-identified packet, from any case, would do.</td></tr>
+  <tr><td>How should the questionnaire's blanks be categorised?</td>
+    <td>She distinguishes a question the form never asked, a question that was asked but does not
+    apply to this patient, and a question that genuinely needs an answer the chart does not support.
+    The design treats the first two as the same thing. With 88 of 186 questions blank, getting this
+    wrong makes any measurement of the questionnaire meaningless.</td></tr>
+  <tr><td>How should the system look up a drug it has never seen?</td>
+    <td>She does not want a fixed list of medications built in; she wants the drug researched when the
+    case arrives, from sources like the FDA label and the manufacturer's information. This collides
+    with the project's central safety rule, which is that the system never acts on anything it cannot
+    prove. A billing code read off a web page is somebody's claim, not a verified fact, and there is
+    currently no agreed way to let one through the gate. <strong>This is the one open question that
+    touches the architecture rather than a feature.</strong></td></tr>
+</table>
+
+<h2><span class="n">7</span>The confidential material</h2>
+<div class="danger">
+  <h3>Read this before archiving anything</h3>
+  <p>The specialist's source material is on the development machine and is <strong>deliberately excluded from the
+  code repository</strong> — one rule in the repository's ignore file covers the whole folder, and that was
+  verified before anything was published. The repository is public; this material is not in it, and
+  it must not end up in it.</p>
+</div>
+<table>
+  <tr><th>what</th><th>detail</th></tr>
+  <tr><td>Her reference document</td>
+    <td>The 12 rules the whole engine is built on, plus one fully worked case. <strong>That worked case
+    contains real patient data.</strong></td></tr>
+  <tr><td>Case library</td><td>21 solved cases, 16 medications, 46 files, about 43 MB, de-identified
+    under the HIPAA Safe Harbor standard.</td></tr>
+  <tr><td>Interview answers</td><td>Two rounds, including the questionnaire returned on 13 October.
+    The October file still needs filing alongside the rest.</td></tr>
+  <tr><td>Known gap</td><td>One case's questionnaire screenshot still shows a portal header with a
+    name on it. It was found and logged but never cleaned, and all 46 files were never re-scanned.</td></tr>
+</table>
+<p><strong>Recommendation.</strong> No agreement was ever put in place with an AI vendor permitting this
+material to be processed — that agreement would have been required before any real use, and the
+project never got that far. With development stopped, there is no remaining reason to hold a copy.
+The clean ending is to return the material to her, confirm she has it, and then delete the local
+copy. <em>Nothing has been deleted; that is the owner's call, not an automated one.</em></p>
+
+<h2><span class="n">8</span>If someone picks this up</h2>
+<p class="lede">What a new engineer needs, in the order they need it.</p>
+<ul>
+  <li><strong>Day one, read two files.</strong> <code>AGENT.md</code> in the repository is the full technical
+    handoff — what exists, why, what is dangerous, and what is unfinished. The system design document
+    explains the architecture and why each piece is shaped the way it is. Everything else can wait.</li>
+  <li><strong>Run the tests first.</strong> Two commands, no setup, no accounts, no network. If 48 tests pass,
+    the engine is intact and they can trust it while they read.</li>
+  <li><strong>Do not grow the drug list.</strong> There is a small table of four medications in the code. It
+    looks like the start of a list. It is not — it covers the test cases and nothing more, and the specialist
+    explicitly does not want a built-in list. The comment above it says so.</li>
+  <li><strong>Get access to the specialist, or do not start.</strong> She is the only source of truth for every rule in
+    the system. Without her, a new engineer can maintain what exists but cannot correctly extend it.</li>
+  <li><strong>Get one referral before writing any new code.</strong> Section 5 explains why. Starting stage 1
+    work without one means building against a guess for a second time.</li>
+</ul>
+
+<h2><span class="n">9</span>Handover checklist</h2>
+<ul class="check">
+  <li><div><b>Push the final commit.</b> <span class="who">owner</span><br>
+    The last round of work is committed locally but not yet pushed to GitHub. One command from the
+    development machine.</div></li>
+  <li><div><b>Add the status note to the repository front page and archive it.</b> <span class="who">owner</span><br>
+    Done on the front page. Archiving on GitHub makes it read-only while keeping the published
+    documents reachable by link.</div></li>
+  <li><div><b>Return the confidential material to the specialist and delete the local copy.</b> <span class="who">owner</span><br>
+    Section 7. Confirm receipt before deleting.</div></li>
+  <li><div><b>Tell the specialist directly.</b> <span class="who">owner</span><br>
+    She answered two rounds of detailed questions, the second set on 13 October, after which work
+    stopped. She should hear it from a person, with the documents and a plain statement of what was
+    and was not built.</div></li>
+  <li><div><b>File the October questionnaire with the rest of her material.</b> <span class="who">owner</span><br>
+    It is referenced throughout but has not been saved into the data folder.</div></li>
+  <li><div><b>Clean the one portal header and re-scan the case files.</b> <span class="who">whoever continues</span><br>
+    Logged, never done. Not urgent while the material is not published, but it should not be
+    inherited silently.</div></li>
+</ul>
+
+<h2><span class="n">10</span>An honest closing assessment</h2>
+<p>This is a good idea that was being built carefully, and it stopped at an awkward point: past the
+hard thinking, short of the useful product. The groundwork is unusually solid for an unfinished
+project — the architecture is written down, the reasoning is preserved, the specialist's rules are
+encoded and tested, and the things that are missing are known and named rather than discovered later
+by someone else.</p>
+<p>What it never got was contact with reality. Not one real referral went through it, and no
+specialist ever used its output to submit an actual authorization. Until that happens, the
+confidence in it rests on expert interviews and internal consistency, not evidence. That is the
+honest line to give anyone who asks how far along it was.</p>
+<p>If it restarts, the order is not negotiable: get one referral, settle the drug-lookup question
+with the specialist, then build the judgment layer. Doing those out of order wastes the groundwork that is
+already there.</p>
+
+<footer>
+  PriorMD handover · prepared 13 October 2026 · no patient data on this page<br>
+  Companion documents: <a href="engine-design.html">system design</a> ·
+  <a href="overview.html">plain-language overview</a> ·
+  <a href="sme-reply-2026-10-13.html">what her last answers changed</a><br>
+  Technical handoff: <code>AGENT.md</code> in the repository root.
+</footer>
+</div></body></html>

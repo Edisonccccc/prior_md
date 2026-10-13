@@ -1,5 +1,14 @@
 # PriorMD
 
+> **Status: development stopped, 13 October 2026.** This repository is kept as a
+> record, not as an active project. Four of twelve planned checkpoints are met: the
+> calculation engine is built and tested, the judgment layer and the payer-questionnaire
+> work were never started, and nothing here has been run against a real referral.
+>
+> **Start with the [handover](https://edisonccccc.github.io/prior_md/docs/handover.html)**
+> — what exists, what it is worth, what is missing, and what picking this up would need.
+> `AGENT.md` is the technical handoff.
+
 Turn a clinical referral packet into a submission-ready prior authorization
 that a PA specialist **approves rather than rewrites**.
 
